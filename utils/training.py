@@ -199,29 +199,29 @@ def train(model: ContinualModel, dataset: ContinualDataset,
             model.net.train()
             train_loader, _ = dataset.get_data_loaders()
 
-            #The train_loader now has the classes for this particular task
-            # labels, counts = torch.unique(torch.tensor(train_loader.dataset.dataset.targets), return_counts=True)
+            # The train_loader now has the classes for this particular task
+            labels, counts = torch.unique(torch.tensor(train_loader.dataset.dataset.targets.clone().detach()), return_counts=True)
 
-            # for label, count in zip(labels.tolist(), counts.tolist()):
-            #     all_class_counts[label] = all_class_counts.get(label, 0) + count
+            for label, count in zip(labels.tolist(), counts.tolist()):
+                all_class_counts[label] = all_class_counts.get(label, 0) + count
 
-            # # Convert counts to a sorted list for percentile calculation
-            # count_values = np.array(list(all_class_counts.values()))
+            # Convert counts to a sorted list for percentile calculation
+            count_values = np.array(list(all_class_counts.values()))
 
-            # # Compute 30th and 70th percentiles
-            # percentile_30 = np.percentile(count_values, 30)
-            # percentile_70 = np.percentile(count_values, 70)
+            # Compute 30th and 70th percentiles
+            percentile_30 = np.percentile(count_values, 30)
+            percentile_70 = np.percentile(count_values, 70)
 
-            # # Segregate classes
-            # head = [cls for cls, count in all_class_counts.items() if count > percentile_70]
-            # tail = [cls for cls, count in all_class_counts.items() if count < percentile_30]
-            # mid = [cls for cls, count in all_class_counts.items() if percentile_30 <= count <= percentile_70]
+            # Segregate classes
+            head = [cls for cls, count in all_class_counts.items() if count > percentile_70]
+            tail = [cls for cls, count in all_class_counts.items() if count < percentile_30]
+            mid = [cls for cls, count in all_class_counts.items() if percentile_30 <= count <= percentile_70]
 
-            # # Store in a dictionary with task number as key
-            # # task_class_counts[t] = {label.item(): count.item() for label, count in zip(labels, counts)}
-            # # for i in range(len(task_class_counts)):
+            # Store in a dictionary with task number as key
+            # task_class_counts[t] = {label.item(): count.item() for label, count in zip(labels, counts)}
+            # for i in range(len(task_class_counts)):
 
-            # #we have the counts for each class in this task. We also have the head, mid, tail classes separately for this task
+            #we have the counts for each class in this task. We also have the head, mid, tail classes separately for this task
         
             if not issubclass(dataset.__class__, GCLDataset):
                 assert issubclass(train_loader.dataset.__class__, MammothDatasetWrapper), "Dataset must be an instance of MammothDatasetWrapper (did you forget to call the `store_masked_loaders`?)"

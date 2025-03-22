@@ -11,6 +11,7 @@ import torch.optim
 import torchvision.transforms as transforms
 from PIL import Image
 from torchvision.datasets import CIFAR100
+import numpy as np
 
 from backbone.ResNetBlock import resnet18
 from datasets.transforms.denormalization import DeNormalize
@@ -27,6 +28,95 @@ class TCIFAR100(CIFAR100):
                  target_transform=None, download=False) -> None:
         self.root = root
         super(TCIFAR100, self).__init__(root, train, transform, target_transform, download=not self._check_integrity())
+
+class IMBALANCECIFAR100(CIFAR100):
+    cls_num = 100
+
+    def __init__(self, root, imb_type='exp', imb_factor=0.01, rand_number=0, train=True,
+                 transform=None, target_transform=None,
+                 download=False):
+        self.not_aug_transform = transforms.Compose([transforms.ToTensor()])
+        super(IMBALANCECIFAR100, self).__init__(root, train, transform, target_transform, download)
+        np.random.seed(rand_number)
+        img_num_list = self.get_img_num_per_cls(self.cls_num, imb_type, imb_factor)
+        self.gen_imbalanced_data(img_num_list)
+
+    def get_img_num_per_cls(self, cls_num, imb_type, imb_factor):
+        img_max = len(self.data) / cls_num
+        img_num_per_cls = []
+        if imb_type == 'exp':
+            for cls_idx in range(cls_num):
+                num = img_max * (imb_factor**(cls_idx / (cls_num - 1.0)))
+                img_num_per_cls.append(int(num))
+        elif imb_type == 'step':
+            for cls_idx in range(cls_num // 2):
+                img_num_per_cls.append(int(img_max))
+            for cls_idx in range(cls_num // 2):
+                img_num_per_cls.append(int(img_max * imb_factor))
+        elif imb_type == 'fewshot':
+            for cls_idx in range(cls_num):
+                if cls_idx<50:
+                    num = img_max
+                else:
+                    num = img_max*0.01
+                img_num_per_cls.append(int(num))
+        else:
+            img_num_per_cls.extend([int(img_max)] * cls_num)
+        return img_num_per_cls
+
+    def gen_imbalanced_data(self, img_num_per_cls):
+        new_data = []
+        new_targets = []
+        targets_np = np.array(self.targets, dtype=np.int64)
+        classes = np.unique(targets_np)
+        # np.random.shuffle(classes)
+        self.num_per_cls_dict = dict()
+        for the_class, the_img_num in zip(classes, img_num_per_cls):
+            self.num_per_cls_dict[the_class] = the_img_num
+            idx = np.where(targets_np == the_class)[0]
+            np.random.shuffle(idx)
+            selec_idx = idx[:the_img_num]
+            new_data.append(self.data[selec_idx, ...])
+            new_targets.extend([the_class, ] * the_img_num)
+        new_data = np.vstack(new_data)
+        self.data = new_data
+        self.targets = new_targets
+        
+    def get_cls_num_list(self):
+        cls_num_list = []
+        for i in range(self.cls_num):
+            cls_num_list.append(self.num_per_cls_dict[i])
+        return cls_num_list
+    
+    def __getitem__(self, index: int) -> Tuple[Image.Image, int, Image.Image]:
+        """
+        Gets the requested element from the dataset.
+
+        Args:
+            index: index of the element to be returned
+
+        Returns:
+            tuple: (image, target) where target is index of the target class.
+        """
+        img, target = self.data[index], self.targets[index]
+
+        # to return a PIL Image
+        img = Image.fromarray(img, mode='RGB')
+        original_img = img.copy()
+
+        not_aug_img = self.not_aug_transform(original_img)
+
+        if self.transform is not None:
+            img = self.transform(img)
+
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+
+        if hasattr(self, 'logits'):
+            return img, target, not_aug_img, self.logits[index]
+
+        return img, target, not_aug_img
+
 
 
 class MyCIFAR100(CIFAR100):
@@ -103,8 +193,13 @@ class SequentialCIFAR100(ContinualDataset):
         test_transform = transforms.Compose(
             [transforms.ToTensor(), self.get_normalization_transform()])
 
-        train_dataset = MyCIFAR100(base_path() + 'CIFAR100', train=True,
-                                   download=True, transform=transform)
+        # train_dataset = MyCIFAR100(base_path() + 'CIFAR100', train=True,
+        #                            download=True, transform=transform)
+        # test_dataset = TCIFAR100(base_path() + 'CIFAR100', train=False,
+        #                          download=True, transform=test_transform)
+        
+        train_dataset = IMBALANCECIFAR100(base_path() + 'CIFAR100', train=True,
+                                   download=True, transform=transform, imb_factor=0.01)
         test_dataset = TCIFAR100(base_path() + 'CIFAR100', train=False,
                                  download=True, transform=test_transform)
 
@@ -144,9 +239,9 @@ class SequentialCIFAR100(ContinualDataset):
     def get_batch_size(self):
         return 32
 
-    @set_default_from_args('lr_scheduler')
-    def get_scheduler_name(self):
-        return 'multisteplr'
+    # @set_default_from_args('lr_scheduler') #Commenting this because moe_adapter does not require lr_scheduler
+    # def get_scheduler_name(self):
+    #     return 'multisteplr'
 
     @set_default_from_args('lr_milestones')
     def get_scheduler_name(self):

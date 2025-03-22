@@ -128,9 +128,8 @@ def train_single_epoch(model: ContinualModel,
     if scheduler is not None and args.scheduler_mode == 'epoch':
         scheduler.step()
 
-
 def train(model: ContinualModel, dataset: ContinualDataset,
-          args: Namespace) -> None:
+          args: Namespace, log_file = None) -> None:
     """
     The training process, including evaluations and loggers.
 
@@ -193,10 +192,37 @@ def train(model: ContinualModel, dataset: ContinualDataset,
             eval_dataset = dataset
 
         torch.cuda.empty_cache()
+        
+        # task_class_counts = {}
+        all_class_counts = {}
         for t in range(start_task, end_task):
             model.net.train()
             train_loader, _ = dataset.get_data_loaders()
 
+            #The train_loader now has the classes for this particular task
+            # labels, counts = torch.unique(torch.tensor(train_loader.dataset.dataset.targets), return_counts=True)
+
+            # for label, count in zip(labels.tolist(), counts.tolist()):
+            #     all_class_counts[label] = all_class_counts.get(label, 0) + count
+
+            # # Convert counts to a sorted list for percentile calculation
+            # count_values = np.array(list(all_class_counts.values()))
+
+            # # Compute 30th and 70th percentiles
+            # percentile_30 = np.percentile(count_values, 30)
+            # percentile_70 = np.percentile(count_values, 70)
+
+            # # Segregate classes
+            # head = [cls for cls, count in all_class_counts.items() if count > percentile_70]
+            # tail = [cls for cls, count in all_class_counts.items() if count < percentile_30]
+            # mid = [cls for cls, count in all_class_counts.items() if percentile_30 <= count <= percentile_70]
+
+            # # Store in a dictionary with task number as key
+            # # task_class_counts[t] = {label.item(): count.item() for label, count in zip(labels, counts)}
+            # # for i in range(len(task_class_counts)):
+
+            # #we have the counts for each class in this task. We also have the head, mid, tail classes separately for this task
+        
             if not issubclass(dataset.__class__, GCLDataset):
                 assert issubclass(train_loader.dataset.__class__, MammothDatasetWrapper), "Dataset must be an instance of MammothDatasetWrapper (did you forget to call the `store_masked_loaders`?)"
 
@@ -304,6 +330,18 @@ def train(model: ContinualModel, dataset: ContinualDataset,
             model.meta_end_task(dataset)
 
             accs = eval_dataset.evaluate(model, eval_dataset)
+
+            print(f'Hi1, accs array is {accs}\n')
+            import copy
+            accs_to_log = copy.deepcopy(accs)
+
+            #This array has accuracies for all tasks: 1, 2, 3 4, 5. Current as well as future
+            if log_file:
+                for i in range(t + 1, end_task):
+                    accs_to_log[0][i] = 0
+                    accs_to_log[1][i] = 0
+                log_file.write(f"{accs_to_log[0]}\n")
+                log_file.flush() 
 
             if args.eval_future and t < dataset.N_TASKS - 1:
                 transf_accs = accs[0][t + 1:], accs[1][t + 1:]

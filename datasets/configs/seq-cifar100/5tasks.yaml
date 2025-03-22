@@ -1,3 +1,4 @@
+# lr_scheduler: None
 N_TASKS: 5
 N_CLASSES_PER_TASK: 20
 N_CLASSES: 100

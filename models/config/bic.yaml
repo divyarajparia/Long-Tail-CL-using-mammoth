@@ -5,7 +5,7 @@ seq-cifar100:
   2000:
     lr: 0.1
     model: bic
-    n_epochs: 250
+    n_epochs: 2
     lr_scheduler: multisteplr
     lr_milestones: [100, 150, 200]
     sched_multistep_lr_gamma: 0.1

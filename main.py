@@ -415,7 +415,11 @@ def main(args=None):
     except Exception:
         pass
 
-    train(model, dataset, args)
+    # train(model, dataset, args)
+
+    with open("accuracy_log.txt", "w") as file:
+        train(model, dataset, args, log_file = file)
+
 
 
 if __name__ == '__main__':

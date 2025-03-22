@@ -200,9 +200,10 @@ class ContinualDataset(object):
 
         if self.args.permute_classes:
             if not hasattr(self.args, 'class_order'):  # set only once
-                if self.args.seed is not None:
-                    np.random.seed(self.args.seed)
-                self.args.class_order = np.random.permutation(self.N_CLASSES)
+                # if self.args.seed is not None:
+                #     np.random.seed(self.args.seed)
+                # self.args.class_order = np.random.permutation(self.N_CLASSES)
+                self.args.class_order = np.array([69, 23, 57, 12, 89, 87, 34, 84, 3, 15, 47, 74, 75, 30, 52, 38, 37, 26, 72, 25, 46, 67, 61, 4, 64, 77, 16, 71, 28, 96, 78, 48, 88, 99, 65, 62, 82, 50, 19, 94, 10, 41, 60, 18, 39, 32, 79, 76, 91, 97, 27, 90, 45, 29, 49, 14, 1, 98, 20, 35, 43, 83, 80, 85, 58, 7, 59, 95, 0, 81, 21, 53, 42, 92, 8, 86, 9, 22, 2, 44, 17, 31, 33, 36, 5, 24, 63, 66, 70, 11, 6, 40, 13, 93, 73, 51, 54, 56, 55, 68])
 
         if args.label_perc != 1 or args.label_perc_by_class != 1:
             self.unlabeled_rng = np.random.RandomState(args.seed)
@@ -438,6 +439,7 @@ def store_masked_loaders(train_dataset: Dataset, test_dataset: Dataset,
 
     # Permute classes
     if setting.args.permute_classes:
+
         train_dataset.targets = setting.args.class_order[train_dataset.targets]
         test_dataset.targets = setting.args.class_order[test_dataset.targets]
 
@@ -534,5 +536,6 @@ def fix_class_names_order(class_names: List[str], args: Namespace) -> List[str]:
         List[str]: the class names in the correct order
     """
     if args.permute_classes:
+        args.class_order = np.array(args.class_order)
         class_names = [class_names[np.where(args.class_order == i)[0][0]] for i in range(len(class_names))]
     return class_names

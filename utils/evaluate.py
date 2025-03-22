@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Callable, Tuple
 import torch
 from tqdm import tqdm
+import numpy as np
 
 if TYPE_CHECKING:
     from models.utils.continual_model import ContinualModel
@@ -57,6 +58,9 @@ def evaluate(model: 'ContinualModel', dataset: 'ContinualDataset', last=False, r
     tot_seen_samples = 0
     total_len = sum(len(x) for x in dataset.test_loaders) if hasattr(dataset.test_loaders[0], '__len__') else None
 
+    # n_tasks = len(dataset.test_loaders)
+    # cil_accs = torch.zeros(n_tasks, n_tasks)
+
     pbar = tqdm(dataset.test_loaders, total=total_len, desc='Evaluating', disable=model.args.non_verbose)
     for k, test_loader in enumerate(dataset.test_loaders):
         if last and k < len(dataset.test_loaders) - 1:
@@ -107,9 +111,15 @@ def evaluate(model: 'ContinualModel', dataset: 'ContinualDataset', last=False, r
         accs.append(correct / total * 100
                     if 'class-il' in model.COMPATIBILITY or 'general-continual' in model.COMPATIBILITY else 0)
         accs_mask_classes.append(correct_mask_classes / total * 100)
+
+        # for i in range(len(accs)):  
+        #     cil_accs[k, i] = accs[i]  
     pbar.close()
 
     model.net.train(status)
+
+    # if acc_log_file:
+    #     np.savetxt(acc_log_file, cil_accs.numpy(), fmt="%.4f", delimiter="\t")
     if return_loss:
         return accs, accs_mask_classes, avg_loss / tot_seen_samples
     return accs, accs_mask_classes

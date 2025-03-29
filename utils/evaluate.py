@@ -58,8 +58,7 @@ def evaluate(model: 'ContinualModel', dataset: 'ContinualDataset', last=False, r
     tot_seen_samples = 0
     total_len = sum(len(x) for x in dataset.test_loaders) if hasattr(dataset.test_loaders[0], '__len__') else None
 
-    # n_tasks = len(dataset.test_loaders)
-    # cil_accs = torch.zeros(n_tasks, n_tasks)
+    class_wise_counts = {}
 
     pbar = tqdm(dataset.test_loaders, total=total_len, desc='Evaluating', disable=model.args.non_verbose)
     for k, test_loader in enumerate(dataset.test_loaders):
@@ -92,6 +91,13 @@ def evaluate(model: 'ContinualModel', dataset: 'ContinualDataset', last=False, r
             _, pred = torch.max(outputs[:, :n_classes].data, 1)
             correct += torch.sum(pred == labels).item()
             total += labels.shape[0]
+
+            for label, p in zip(labels, pred):  
+                if label.item() not in class_wise_counts:
+                    class_wise_counts[label.item()] = [0, 0]  # [correct_count, total_count]
+                class_wise_counts[label.item()][0] += (p == label).item()
+                class_wise_counts[label.item()][1] += 1
+
             i += 1
             pbar.set_postfix({f'acc_task_{k+1}': max(0, correct / total * 100)}, refresh=False)
             pbar.set_description(f"Evaluating Task {k+1}", refresh=False)
@@ -118,8 +124,12 @@ def evaluate(model: 'ContinualModel', dataset: 'ContinualDataset', last=False, r
 
     model.net.train(status)
 
-    # if acc_log_file:
-    #     np.savetxt(acc_log_file, cil_accs.numpy(), fmt="%.4f", delimiter="\t")
+    class_accuracies = {cls: (correct / total * 100 if total > 0 else 0)
+                        for cls, (correct, total) in class_wise_counts.items()}
+
+    print("\nPer-Class Accuracies:")
+    for cls in sorted(class_accuracies.keys()):
+        print(f"Class {cls}: {class_accuracies[cls]:.2f}%")
     if return_loss:
         return accs, accs_mask_classes, avg_loss / tot_seen_samples
-    return accs, accs_mask_classes
+    return accs, accs_mask_classes, class_accuracies

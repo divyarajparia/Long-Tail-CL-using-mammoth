@@ -180,9 +180,12 @@ def train(model: ContinualModel, dataset: ContinualDataset,
 
         if args.eval_future:
             assert isinstance(model, FutureModel), "Model must be an instance of FutureModel to evaluate on future tasks"
+            # this is the line were we get eval_dataset. what is the get_dataset function?
             eval_dataset = get_dataset(args)
 
             # disable logging for this loop
+
+            # eval_dataset is modified and train_loader omitted from it
             with disable_logging(logging.WARNING):
                 for _ in range(dataset.N_TASKS):
                     eval_dataset.get_data_loaders()
@@ -226,6 +229,8 @@ def train(model: ContinualModel, dataset: ContinualDataset,
             if not issubclass(dataset.__class__, GCLDataset):
                 assert issubclass(train_loader.dataset.__class__, MammothDatasetWrapper), "Dataset must be an instance of MammothDatasetWrapper (did you forget to call the `store_masked_loaders`?)"
 
+            #args.enable_other_metrics is False by default
+
             if can_compute_fwd_beforetask and is_fwd_enabled and args.enable_other_metrics:
                 # try to compute accuracy at the beginning of the task
                 try:
@@ -240,6 +245,7 @@ def train(model: ContinualModel, dataset: ContinualDataset,
 
             model.meta_begin_task(dataset)
 
+            # This block also does not execute by default due to can_compute_forward_task being True
             if not can_compute_fwd_beforetask and is_fwd_enabled and args.enable_other_metrics:
                 if train_loader.dataset.num_times_iterated == 0:  # compute only if the model has not been trained yet
                     try:
@@ -254,6 +260,7 @@ def train(model: ContinualModel, dataset: ContinualDataset,
                     logging.info("Model used the training data, skipping Forward Transfer metric compute")
                     is_fwd_enabled = False
 
+            # This does not block execute as enable_other_metrics is False by default
             if not args.inference_only and args.n_epochs > 0:
                 if t and args.enable_other_metrics:
                     accs = eval_dataset.evaluate(model, eval_dataset, last=True)
@@ -279,17 +286,21 @@ def train(model: ContinualModel, dataset: ContinualDataset,
                 if args.non_verbose:
                     logging.info(f"Task {t + 1}")  # at least print the task number
 
+                # This is where the training actually starts
                 while True:
                     model.begin_epoch(epoch, dataset)
 
                     train_pbar.set_description(f"Task {t + 1} - Epoch {epoch + 1}")
 
+                    # train_single_epoch function is where the model is trained for this epoch
                     train_single_epoch(model, train_loader, args, pbar=train_pbar, epoch=epoch,
                                        system_tracker=system_tracker, scheduler=scheduler)
 
                     model.end_epoch(epoch, dataset)
 
                     epoch += 1
+
+                    # fitting_mode is indeed epochs, and we break out of the while loop here
                     if args.fitting_mode == 'epochs' and epoch >= model.args.n_epochs:
                         break
                     elif args.fitting_mode == 'iters' and model.task_iteration >= model.args.n_iters:
@@ -329,28 +340,68 @@ def train(model: ContinualModel, dataset: ContinualDataset,
 
             model.meta_end_task(dataset)
 
+            ### This is where the evaluation for this particular task on the test set happens. go ot evaluate function to further understand this
             accs = eval_dataset.evaluate(model, eval_dataset)
+            accs, class_accuracies = accs[:2], accs[2]
 
-            print(f'Hi1, accs array is {accs}\n')
-            import copy
-            accs_to_log = copy.deepcopy(accs)
+            
 
-            #This array has accuracies for all tasks: 1, 2, 3 4, 5. Current as well as future
+            # print(f'Hi1, accs array is {accs}\n')
+            # import copy
+            # accs_to_log = copy.deepcopy(accs)
+
+            # #This array has accuracies for all tasks: 1, 2, 3 4, 5. Current as well as future
+            # if log_file:
+            #     for i in range(t + 1, end_task):
+            #         accs_to_log[0][i] = 0
+            #         accs_to_log[1][i] = 0
+            #     log_file.write(f"{accs_to_log[0]}\n")
+            #     log_file.flush() 
+
+            
             if log_file:
-                for i in range(t + 1, end_task):
-                    accs_to_log[0][i] = 0
-                    accs_to_log[1][i] = 0
-                log_file.write(f"{accs_to_log[0]}\n")
-                log_file.flush() 
+                log_file.write(f"\n=== Task {t} Evaluation ===\n")
 
+                # Print per-class accuracy
+                for cls in sorted(class_accuracies.keys()):
+                    class_acc = class_accuracies[cls]
+                    log_file.write(f"  Class {cls}: {class_acc:.2f}%")
+
+                log_file.write("\n")  # Separate tasks for readability
+
+                # Compute and print per-task average accuracy
+                task_avg_accuracies = []
+                classes_per_task = len(class_accuracies) // 5  # Assuming 5 tasks, equally split classes
+
+                for task_id in range(5):
+                    task_classes = range(task_id * classes_per_task, (task_id + 1) * classes_per_task)
+                    task_accs = [class_accuracies[cls] for cls in task_classes if cls in class_accuracies]
+
+                    if task_accs:  # Avoid division by zero
+                        avg_acc = sum(task_accs) / len(task_accs)
+                        task_avg_accuracies.append(avg_acc)
+                    else:
+                        task_avg_accuracies.append(0)  # If no classes found for this task, set to 0%
+
+                log_file.write("\n=== Task-wise Average Accuracies ===\n")
+                for task_id, avg_acc in enumerate(task_avg_accuracies):
+                    log_file.write(f"  Task {task_id}: {avg_acc:.2f}%")
+                log_file.write("\n\n")  # Separate sections for readability
+
+
+            ### This stores the transfer accuracies for future tasks
+            ### accs[0] stores task accuracies without class masking. accs[1] does class masking
             if args.eval_future and t < dataset.N_TASKS - 1:
                 transf_accs = accs[0][t + 1:], accs[1][t + 1:]
                 accs = accs[0][:t + 1], accs[1][:t + 1]
-                results_transf.append(transf_accs[0])
-                results_mask_classes_transf.append(transf_accs[1])
+                results_transf.append(transf_accs[0]) # tranfer accuracies withotu class masking
+                results_mask_classes_transf.append(transf_accs[1]) # transfer accuracies with class masking
 
+
+            ### This is where logging happens for current and past task accuracies
             logged_accs = eval_dataset.log(args, logger, accs, t, dataset.SETTING)
 
+            # class il by default
             if dataset.SETTING != 'biased-class-il':
                 results.append(accs[0])
                 results_mask_classes.append(accs[1])
@@ -362,6 +413,8 @@ def train(model: ContinualModel, dataset: ContinualDataset,
                 avg_transf = np.mean([np.mean(task_) for task_ in results_transf])
                 print(f"Transfer Metrics  -  AVG Transfer {avg_transf:.2f}", file=sys.stderr)
                 if t < dataset.N_TASKS - 1:
+
+                    ### This is where logging for future accuracies happens
                     eval_dataset.log(args, logger, transf_accs, t, dataset.SETTING, future=True)
 
             if args.savecheck:

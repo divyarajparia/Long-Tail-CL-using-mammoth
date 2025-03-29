@@ -92,7 +92,8 @@ class MoEAdapters(FutureModel):
 
         num_batches = len(dataset.train_loader)
         total_iterations = self.args.n_epochs * num_batches
-        self.custom_scheduler = CosineSchedulerWithLinearWarmup(self.opt, self.args.lr, 30, total_iterations)
+        # reducing warmup_length from 30 to 25
+        self.custom_scheduler = CosineSchedulerWithLinearWarmup(self.opt, self.args.lr, 25, total_iterations)
 
     def change_transform(self, dataset):
         dataset.train_loader.dataset.transform = self.net.clip_preprocess

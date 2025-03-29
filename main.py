@@ -10,7 +10,7 @@ The script performs the following tasks:
 
 To run the script, execute it directly or import it as a module and call the `main()` function.
 """
-# Copyright 2022-present, Lorenzo Bonicelli, Pietro Buzzega, Matteo Boschini, Angelo Porrello, Simone Calderara.
+# Copyright 2022-present, Lorenzo Bonicelli, Pietro Buzzega, Matteo Boschini, Angelo     Porrello, Simone Calderara.
 # All rights reserved.
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.

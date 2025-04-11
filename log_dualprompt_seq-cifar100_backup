@@ -1,0 +1,47 @@
+
+======Evaluation after task 0 ======
+
+===Class-wise accuracies ===
+  Class 1: 100.00%  Class 2: 98.00%  Class 3: 84.00%  Class 4: 97.00%  Class 5: 95.00%  Class 6: 100.00%  Class 7: 98.00%  Class 8: 99.00%  Class 9: 100.00%  Class 10: 98.00%  Class 11: 97.00%  Class 12: 85.00%  Class 13: 99.00%  Class 14: 98.00%  Class 15: 93.00%  Class 16: 97.00%  Class 17: 93.00%  Class 18: 100.00%  Class 19: 94.00%  Class 20: 94.00%
+===Task-wise accuracies ===
+  Task 1: 95.950%
+===Average task accuracy : 95.950% ===
+
+
+======Evaluation after task 1 ======
+
+===Class-wise accuracies ===
+  Class 1: 100.00%  Class 2: 97.00%  Class 3: 86.00%  Class 4: 94.00%  Class 5: 98.00%  Class 6: 99.00%  Class 7: 100.00%  Class 8: 98.00%  Class 9: 100.00%  Class 10: 98.00%  Class 11: 94.00%  Class 12: 87.00%  Class 13: 95.00%  Class 14: 97.00%  Class 15: 94.00%  Class 16: 95.00%  Class 17: 92.00%  Class 18: 96.00%  Class 19: 91.00%  Class 20: 94.00%  Class 21: 93.00%  Class 22: 95.00%  Class 23: 92.00%  Class 24: 93.00%  Class 25: 74.00%  Class 26: 75.00%  Class 27: 94.00%  Class 28: 86.00%  Class 29: 60.00%  Class 30: 87.00%  Class 31: 92.00%  Class 32: 89.00%  Class 33: 87.00%  Class 34: 90.00%  Class 35: 87.00%  Class 36: 19.00%  Class 37: 98.00%  Class 38: 83.00%  Class 39: 91.00%  Class 40: 96.00%
+===Task-wise accuracies ===
+  Task 1: 95.250%  Task 2: 84.050%
+===Average task accuracy : 89.650% ===
+
+
+======Evaluation after task 2 ======
+
+===Class-wise accuracies ===
+  Class 1: 100.00%  Class 2: 98.00%  Class 3: 83.00%  Class 4: 96.00%  Class 5: 95.00%  Class 6: 99.00%  Class 7: 99.00%  Class 8: 98.00%  Class 9: 100.00%  Class 10: 97.00%  Class 11: 92.00%  Class 12: 85.00%  Class 13: 96.00%  Class 14: 97.00%  Class 15: 96.00%  Class 16: 94.00%  Class 17: 91.00%  Class 18: 96.00%  Class 19: 92.00%  Class 20: 94.00%  Class 21: 94.00%  Class 22: 95.00%  Class 23: 90.00%  Class 24: 91.00%  Class 25: 74.00%  Class 26: 77.00%  Class 27: 91.00%  Class 28: 82.00%  Class 29: 57.00%  Class 30: 86.00%  Class 31: 93.00%  Class 32: 84.00%  Class 33: 87.00%  Class 34: 88.00%  Class 35: 88.00%  Class 36: 22.00%  Class 37: 97.00%  Class 38: 85.00%  Class 39: 88.00%  Class 40: 95.00%  Class 41: 78.00%  Class 42: 93.00%  Class 43: 76.00%  Class 44: 81.00%  Class 45: 81.00%  Class 46: 44.00%  Class 47: 31.00%  Class 48: 55.00%  Class 49: 69.00%  Class 50: 82.00%  Class 51: 80.00%  Class 52: 97.00%  Class 53: 58.00%  Class 54: 100.00%  Class 55: 90.00%  Class 56: 20.00%  Class 57: 88.00%  Class 58: 66.00%  Class 59: 33.00%  Class 60: 36.00%
+===Task-wise accuracies ===
+  Task 1: 94.900%  Task 2: 83.200%  Task 3: 67.900%
+===Average task accuracy : 82.000% ===
+
+
+======Evaluation after task 3 ======
+
+===Class-wise accuracies ===
+  Class 1: 100.00%  Class 2: 99.00%  Class 3: 79.00%  Class 4: 94.00%  Class 5: 97.00%  Class 6: 99.00%  Class 7: 99.00%  Class 8: 99.00%  Class 9: 100.00%  Class 10: 97.00%  Class 11: 94.00%  Class 12: 86.00%  Class 13: 96.00%  Class 14: 97.00%  Class 15: 95.00%  Class 16: 94.00%  Class 17: 92.00%  Class 18: 96.00%  Class 19: 91.00%  Class 20: 93.00%  Class 21: 93.00%  Class 22: 95.00%  Class 23: 89.00%  Class 24: 93.00%  Class 25: 72.00%  Class 26: 76.00%  Class 27: 90.00%  Class 28: 83.00%  Class 29: 55.00%  Class 30: 88.00%  Class 31: 93.00%  Class 32: 83.00%  Class 33: 82.00%  Class 34: 87.00%  Class 35: 86.00%  Class 36: 24.00%  Class 37: 94.00%  Class 38: 86.00%  Class 39: 88.00%  Class 40: 95.00%  Class 41: 77.00%  Class 42: 94.00%  Class 43: 79.00%  Class 44: 79.00%  Class 45: 85.00%  Class 46: 44.00%  Class 47: 28.00%  Class 48: 54.00%  Class 49: 69.00%  Class 50: 84.00%  Class 51: 79.00%  Class 52: 97.00%  Class 53: 58.00%  Class 54: 99.00%  Class 55: 92.00%  Class 56: 15.00%  Class 57: 85.00%  Class 58: 67.00%  Class 59: 36.00%  Class 60: 38.00%  Class 61: 58.00%  Class 62: 0.00%  Class 63: 82.00%  Class 64: 23.00%  Class 65: 59.00%  Class 66: 61.00%  Class 67: 72.00%  Class 68: 62.00%  Class 69: 62.00%  Class 70: 71.00%  Class 71: 83.00%  Class 72: 46.00%  Class 73: 56.00%  Class 74: 79.00%  Class 75: 38.00%  Class 76: 85.00%  Class 77: 15.00%  Class 78: 67.00%  Class 79: 67.00%  Class 80: 45.00%
+===Task-wise accuracies ===
+  Task 1: 94.850%  Task 2: 82.600%  Task 3: 67.950%  Task 4: 56.550%
+===Average task accuracy : 75.487% ===
+
+
+======Evaluation after task 4 ======
+
+===Class-wise accuracies ===
+  Class 1: 100.00%  Class 2: 98.00%  Class 3: 78.00%  Class 4: 95.00%  Class 5: 97.00%  Class 6: 99.00%  Class 7: 99.00%  Class 8: 98.00%  Class 9: 100.00%  Class 10: 96.00%  Class 11: 92.00%  Class 12: 87.00%  Class 13: 95.00%  Class 14: 97.00%  Class 15: 94.00%  Class 16: 92.00%  Class 17: 94.00%  Class 18: 96.00%  Class 19: 93.00%  Class 20: 92.00%  Class 21: 89.00%  Class 22: 96.00%  Class 23: 90.00%  Class 24: 93.00%  Class 25: 67.00%  Class 26: 76.00%  Class 27: 91.00%  Class 28: 82.00%  Class 29: 57.00%  Class 30: 87.00%  Class 31: 90.00%  Class 32: 82.00%  Class 33: 83.00%  Class 34: 86.00%  Class 35: 84.00%  Class 36: 24.00%  Class 37: 97.00%  Class 38: 84.00%  Class 39: 86.00%  Class 40: 95.00%  Class 41: 76.00%  Class 42: 94.00%  Class 43: 77.00%  Class 44: 76.00%  Class 45: 82.00%  Class 46: 42.00%  Class 47: 25.00%  Class 48: 53.00%  Class 49: 66.00%  Class 50: 85.00%  Class 51: 80.00%  Class 52: 97.00%  Class 53: 56.00%  Class 54: 96.00%  Class 55: 90.00%  Class 56: 16.00%  Class 57: 85.00%  Class 58: 66.00%  Class 59: 40.00%  Class 60: 36.00%  Class 61: 58.00%  Class 62: 0.00%  Class 63: 83.00%  Class 64: 25.00%  Class 65: 58.00%  Class 66: 60.00%  Class 67: 71.00%  Class 68: 59.00%  Class 69: 61.00%  Class 70: 72.00%  Class 71: 83.00%  Class 72: 44.00%  Class 73: 51.00%  Class 74: 79.00%  Class 75: 36.00%  Class 76: 85.00%  Class 77: 15.00%  Class 78: 66.00%  Class 79: 65.00%  Class 80: 41.00%  Class 81: 21.00%  Class 82: 0.00%  Class 83: 87.00%  Class 84: 70.00%  Class 85: 26.00%  Class 86: 62.00%  Class 87: 66.00%  Class 88: 51.00%  Class 89: 17.00%  Class 90: 51.00%  Class 91: 4.00%  Class 92: 18.00%  Class 93: 59.00%  Class 94: 49.00%  Class 95: 39.00%  Class 96: 14.00%  Class 97: 2.00%  Class 98: 22.00%  Class 99: 0.00%  Class 100: 48.00%
+===Task-wise accuracies ===
+  Task 1: 94.600%  Task 2: 81.950%  Task 3: 66.900%  Task 4: 55.600%  Task 5: 35.300%
+===Average task accuracy : 66.870% ===
+
+
+======Final Average accuracy across tasks = 81.9915======

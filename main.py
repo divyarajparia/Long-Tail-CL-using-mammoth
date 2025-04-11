@@ -416,8 +416,11 @@ def main(args=None):
         pass
 
     # train(model, dataset, args)
-
-    with open("accuracy_log.txt", "w") as file:
+    file_dataset = args.dataset
+    file_model = args.model
+    file_name = "log_" + file_model + "_" + file_dataset
+    print(file_dataset, file_model)
+    with open(file_name, "w") as file:
         train(model, dataset, args, log_file = file)
 
 

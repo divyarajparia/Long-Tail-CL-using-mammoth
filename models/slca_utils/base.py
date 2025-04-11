@@ -22,11 +22,11 @@ class BaseLearner(object):
         self.topk = 5
 
         #Next 2 lines ommitted to prevent exemplars
-        self._memory_size = args.memory_size
-        self._memory_per_class = args.memory_per_class
+        # self._memory_size = args.memory_size
+        # self._memory_per_class = args.memory_per_class
 
-        # self._memory_size = 0
-        # self._memory_per_class = 0
+        self._memory_size = 0
+        self._memory_per_class = 0
 
         self._fixed_memory = args.fixed_memory
         self._device = device
@@ -55,13 +55,13 @@ class BaseLearner(object):
     def build_rehearsal_memory(self, data_manager, per_class, mode='icarl'):
         if self._fixed_memory:
             #Next line ommited to prevent exemplars
-            self._construct_exemplar_unified(data_manager, per_class)
-            # return None
+            # self._construct_exemplar_unified(data_manager, per_class)
+            return None
         else:
             #Next line ommited to prevent exemplars
-            self._reduce_exemplar(data_manager, per_class)
-            self._construct_exemplar(data_manager, per_class, mode=mode)
-            # return None
+            # self._reduce_exemplar(data_manager, per_class)
+            # self._construct_exemplar(data_manager, per_class, mode=mode)
+            return None
 
     def save_checkpoint(self, filename, head_only=False):
         if hasattr(self._network, 'module'):

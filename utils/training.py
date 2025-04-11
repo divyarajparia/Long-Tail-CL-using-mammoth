@@ -198,6 +198,8 @@ def train(model: ContinualModel, dataset: ContinualDataset,
         
         # task_class_counts = {}
         all_class_counts = {}
+
+        avg_acc_per_task = []
         for t in range(start_task, end_task):
             model.net.train()
             train_loader, _ = dataset.get_data_loaders()
@@ -344,7 +346,8 @@ def train(model: ContinualModel, dataset: ContinualDataset,
             accs = eval_dataset.evaluate(model, eval_dataset)
             accs, class_accuracies = accs[:2], accs[2]
 
-            
+            avg_task_accuracy = np.mean(accs[0][:t + 1])
+            avg_acc_per_task.append(avg_task_accuracy)
 
             # print(f'Hi1, accs array is {accs}\n')
             # import copy
@@ -360,34 +363,25 @@ def train(model: ContinualModel, dataset: ContinualDataset,
 
             
             if log_file:
-                log_file.write(f"\n=== Task {t} Evaluation ===\n")
-
+                log_file.write(f"\n======Evaluation after task {t} ======\n")
+                
+                log_file.write(f"\n===Class-wise accuracies ===\n")
                 # Print per-class accuracy
                 for cls in sorted(class_accuracies.keys()):
                     class_acc = class_accuracies[cls]
-                    log_file.write(f"  Class {cls}: {class_acc:.2f}%")
+                    log_file.write(f"  Class {cls + 1}: {class_acc:.2f}%")
+                
+                log_file.write(f"\n===Task-wise accuracies ===\n")
+                for i, task_acc in enumerate(accs[0]):  
+                    log_file.write(f"  Task {i + 1}: {task_acc:.3f}%")
+
+                log_file.write(f"\n===Average task accuracy : {avg_task_accuracy:.3f}% ===\n")
+                
+
 
                 log_file.write("\n")  # Separate tasks for readability
 
-                # Compute and print per-task average accuracy
-                task_avg_accuracies = []
-                classes_per_task = len(class_accuracies) // 5  # Assuming 5 tasks, equally split classes
-
-                for task_id in range(5):
-                    task_classes = range(task_id * classes_per_task, (task_id + 1) * classes_per_task)
-                    task_accs = [class_accuracies[cls] for cls in task_classes if cls in class_accuracies]
-
-                    if task_accs:  # Avoid division by zero
-                        avg_acc = sum(task_accs) / len(task_accs)
-                        task_avg_accuracies.append(avg_acc)
-                    else:
-                        task_avg_accuracies.append(0)  # If no classes found for this task, set to 0%
-
-                log_file.write("\n=== Task-wise Average Accuracies ===\n")
-                for task_id, avg_acc in enumerate(task_avg_accuracies):
-                    log_file.write(f"  Task {task_id}: {avg_acc:.2f}%")
-                log_file.write("\n\n")  # Separate sections for readability
-
+                
 
             ### This stores the transfer accuracies for future tasks
             ### accs[0] stores task accuracies without class masking. accs[1] does class masking
@@ -424,6 +418,9 @@ def train(model: ContinualModel, dataset: ContinualDataset,
                                         optimizer_st=model.opt.state_dict() if hasattr(model, 'opt') else None,
                                         scheduler_st=scheduler.state_dict() if scheduler is not None else None)
 
+        avg_acc_across_tasks = np.mean(avg_acc_per_task)
+
+        log_file.write(f"\n======Final Average accuracy across tasks = {avg_acc_across_tasks}======\n")
         if args.validation:
             # Final evaluation on the real test set
             print("Starting final evaluation on the real test set...", file=sys.stderr)

@@ -2,7 +2,7 @@ seq-eurosat-rgb:
   model: moe_adapters
 
 seq-cifar100:
-  # lr_scheduler: None
+  lr_scheduler: null
   dataset_config: 5tasks
   seed: 1993
   permute_classes: 1

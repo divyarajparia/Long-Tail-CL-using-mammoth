@@ -181,17 +181,35 @@ class SequentialCIFAR100(ContinualDataset):
     N_CLASSES = N_CLASSES_PER_TASK * N_TASKS
     SIZE = (32, 32)
     MEAN, STD = (0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)
-    TRANSFORM = transforms.Compose(
-        [transforms.RandomCrop(32, padding=4),
-         transforms.RandomHorizontalFlip(),
-         transforms.ToTensor(),
-         transforms.Normalize(MEAN, STD)])
+
+    TRANSFORM = transforms.Compose([
+        transforms.Resize((224, 224)), #Added this line for l2p, as it needs 224 * 224 images
+        # transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize(MEAN, STD)])
+        
+# slca was gicing error so added this TEST_TRANSFORM
+    TEST_TRANSFORM = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(MEAN, STD)
+    ])
+
 
     def get_data_loaders(self) -> Tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
         transform = self.TRANSFORM
 
-        test_transform = transforms.Compose(
-            [transforms.ToTensor(), self.get_normalization_transform()])
+        # test_transform = transforms.Compose(
+        #     [transforms.ToTensor(), self.get_normalization_transform()])
+
+        # This is for the l2p model, as it uses a ViT backbone
+        test_transform = transforms.Compose([
+        transforms.Resize((224, 224)),               
+        transforms.ToTensor(),
+        self.get_normalization_transform()
+    ])
+
 
         # train_dataset = MyCIFAR100(base_path() + 'CIFAR100', train=True,
         #                            download=True, transform=transform)
@@ -239,9 +257,9 @@ class SequentialCIFAR100(ContinualDataset):
     def get_batch_size(self):
         return 32
 
-    # @set_default_from_args('lr_scheduler') #Commenting this because moe_adapter does not require lr_scheduler
-    # def get_scheduler_name(self):
-    #     return 'multisteplr'
+    @set_default_from_args('lr_scheduler') #Commenting this because moe_adapter does not require lr_scheduler
+    def get_scheduler_name(self):
+        return 'multisteplr'
 
     @set_default_from_args('lr_milestones')
     def get_scheduler_name(self):

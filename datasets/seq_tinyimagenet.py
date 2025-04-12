@@ -45,7 +45,7 @@ class TinyImagenet(Dataset):
                 ln = "https://unimore365-my.sharepoint.com/:u:/g/personal/263133_unimore_it/EVKugslStrtNpyLGbgrhjaABqRHcE3PB_r2OEaV7Jy94oQ?e=9K29aD"
                 download(ln, filename=smart_joint(root, 'tiny-imagenet-processed.zip'), unzip=True, unzip_path=root, clean=True)
 
-        self.data = []
+        self.data = [] # this should have the paths of all images read from txt file
         for num in range(20):
             self.data.append(np.load(smart_joint(
                 root, 'processed/x_%s_%02d.npy' %
@@ -62,6 +62,7 @@ class TinyImagenet(Dataset):
     def __len__(self):
         return len(self.data)
 
+    # Cant do this
     def __getitem__(self, index):
         img, target = self.data[index], self.targets[index]
 
@@ -81,6 +82,81 @@ class TinyImagenet(Dataset):
 
         return img, target
 
+class IMBALANCETinyImagenet(TinyImagenet):
+    cls_num = 200  
+
+    def __init__(self, root: str, imb_type='exp', imb_factor=0.01, rand_number=0,
+                 train: bool = True, transform: Optional[nn.Module] = None,
+                 target_transform: Optional[nn.Module] = None, download: bool = False) -> None:
+        self.not_aug_transform = transforms.Compose([transforms.ToTensor()])
+        super(IMBALANCETinyImagenet, self).__init__(root, train, transform, target_transform, download)
+
+        np.random.seed(rand_number)
+        img_num_list = self.get_img_num_per_cls(self.cls_num, imb_type, imb_factor)
+        self.gen_imbalanced_data(img_num_list)
+
+    def get_img_num_per_cls(self, cls_num, imb_type, imb_factor):
+        img_max = len(self.data) / cls_num
+        img_num_per_cls = []
+        if imb_type == 'exp':
+            for cls_idx in range(cls_num):
+                num = img_max * (imb_factor ** (cls_idx / (cls_num - 1.0)))
+                img_num_per_cls.append(int(num))
+        elif imb_type == 'step':
+            for cls_idx in range(cls_num // 2):
+                img_num_per_cls.append(int(img_max))
+            for cls_idx in range(cls_num // 2):
+                img_num_per_cls.append(int(img_max * imb_factor))
+        elif imb_type == 'fewshot':
+            for cls_idx in range(cls_num):
+                if cls_idx < cls_num // 2:
+                    num = img_max
+                else:
+                    num = img_max * 0.01
+                img_num_per_cls.append(int(num))
+        else:
+            img_num_per_cls.extend([int(img_max)] * cls_num)
+        return img_num_per_cls
+
+    def gen_imbalanced_data(self, img_num_per_cls):
+        new_data = []
+        new_targets = []
+        targets_np = np.array(self.targets, dtype=np.int64)
+        classes = np.unique(targets_np)
+        self.num_per_cls_dict = dict()
+
+        for the_class, the_img_num in zip(classes, img_num_per_cls):
+            self.num_per_cls_dict[the_class] = the_img_num
+            idx = np.where(targets_np == the_class)[0]
+            np.random.shuffle(idx)
+            selec_idx = idx[:the_img_num]
+            new_data.append(self.data[selec_idx, ...])
+            new_targets.extend([the_class] * the_img_num)
+
+        self.data = np.vstack(new_data)
+        self.targets = new_targets
+
+    def get_cls_num_list(self):
+        return [self.num_per_cls_dict[i] for i in range(self.cls_num)]
+
+    def __getitem__(self, index):
+        img, target = self.data[index], self.targets[index]
+
+        img = Image.fromarray(np.uint8(255 * img))
+        original_img = img.copy()
+
+        not_aug_img = self.not_aug_transform(original_img)
+
+        if self.transform is not None:
+            img = self.transform(img)
+
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+
+        if hasattr(self, 'logits'):
+            return img, target, not_aug_img, self.logits[index]
+
+        return img, target, not_aug_img
 
 class MyTinyImagenet(TinyImagenet):
     """Overrides the TinyImagenet dataset to change the getitem function."""
@@ -146,8 +222,12 @@ class SequentialTinyImagenet(ContinualDataset):
         test_transform = transforms.Compose(
             [transforms.ToTensor(), self.get_normalization_transform()])
 
-        train_dataset = MyTinyImagenet(base_path() + 'TINYIMG',
+        # train_dataset = MyTinyImagenet(base_path() + 'TINYIMG',
+        #                                train=True, download=True, transform=transform)
+
+        train_dataset = IMBALANCETinyImagenet(base_path() + 'TINYIMG',
                                        train=True, download=True, transform=transform)
+        
         test_dataset = TinyImagenet(base_path() + 'TINYIMG',
                                     train=False, download=True, transform=test_transform)
 

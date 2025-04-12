@@ -380,6 +380,7 @@ def train(model: ContinualModel, dataset: ContinualDataset,
 
 
                 log_file.write("\n")  # Separate tasks for readability
+                log_file.flush()
 
                 
 
@@ -421,6 +422,8 @@ def train(model: ContinualModel, dataset: ContinualDataset,
         avg_acc_across_tasks = np.mean(avg_acc_per_task)
 
         log_file.write(f"\n======Final Average accuracy across tasks = {avg_acc_across_tasks}======\n")
+        log_file.flush()
+        
         if args.validation:
             # Final evaluation on the real test set
             print("Starting final evaluation on the real test set...", file=sys.stderr)

@@ -56,6 +56,14 @@ class SLCA(ContinualModel):
         self.class_means = torch.zeros(self.num_classes, n_features).to(self.device)
         self.class_covs = torch.zeros(self.num_classes, n_features, n_features).to(self.device)
 
+        # import numpy as np
+        # import torch.nn.functional as F
+
+        # # self.class_counts = torch.zeros(self.num_classes)
+        # self.class_counts = torch.zeros(self.num_classes)
+        # self.log_priors = None
+        # self.logit_adjustment_temperature = 1.0
+
     def get_parameters(self):
         return self.net._network.parameters()
 
@@ -71,6 +79,16 @@ class SLCA(ContinualModel):
 
         if self.current_task > 0:
             self.net._stage2_compact_classifier(self.class_means, self.class_covs, self.offset_1, self.offset_2)
+
+        # total_class_counts = 0
+        # for _, labels, _ in dataset.train_loader:
+        #     for label in labels:
+        #         self.class_counts[label.item()] += 1
+        #         total_class_counts += 1
+
+        #  # total_class_counts is off by 20 if the class_counts is set to 1
+        # class_priors = self.class_counts / total_class_counts
+        # self.adjustments = torch.log(class_priors** self.logit_adjustment_temperature + 1e-12).to(self.device)
 
     def begin_task(self, dataset):
         if self.current_task > 0:
@@ -88,6 +106,10 @@ class SLCA(ContinualModel):
 
         labels = labels.long()
         logits = self.net._network(inputs, bcb_no_grad=self.net.fix_bcb)['logits']
+
+        # For ad-hoc logit adjustment uncomment following line
+        # adjusted_logits = logits + self.logit_adjustment_temperature * self.adjustments[:logits.size(1)]
+
         loss = self.loss(logits[:, self.offset_1:self.offset_2], labels - self.offset_1)
 
         if self.task_iteration == 0:
@@ -104,3 +126,10 @@ class SLCA(ContinualModel):
     def forward(self, x):
         logits = self.net._network(x)['logits']
         return logits[:, :self.offset_2]
+        # logits = logits[:, :self.offset_2]
+
+        # if (not self.training) and (self.log_priors is not None):
+        #     adjusted_logits = logits - self.logit_adjustment_temperature * self.adjustments[:logits.size(1)]
+        #     return adjusted_logits
+        # else:
+        #     return logits

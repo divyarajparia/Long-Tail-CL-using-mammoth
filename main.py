@@ -418,7 +418,7 @@ def main(args=None):
     # train(model, dataset, args)
     file_dataset = args.dataset
     file_model = args.model
-    file_name = "log_" + file_model + "_" + file_dataset
+    file_name = "log_" + file_model + "_" + file_dataset + "_basicrun"
     print(file_dataset, file_model)
     with open(file_name, "w") as file:
         train(model, dataset, args, log_file = file)

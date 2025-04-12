@@ -440,8 +440,12 @@ def store_masked_loaders(train_dataset: Dataset, test_dataset: Dataset,
     # Permute classes
     if setting.args.permute_classes:
 
-        train_dataset.targets = setting.args.class_order[train_dataset.targets]
-        test_dataset.targets = setting.args.class_order[test_dataset.targets]
+        class_order = np.array(setting.args.class_order)
+        train_dataset.targets = class_order[train_dataset.targets]
+        # train_dataset.targets = setting.args.class_order[train_dataset.targets]
+        # test_dataset.targets = setting.args.class_order[test_dataset.targets]
+        test_dataset.targets = class_order[(test_dataset.targets)]
+
 
     # Setup validation
     if setting.args.validation:

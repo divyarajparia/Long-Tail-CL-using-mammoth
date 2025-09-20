@@ -66,6 +66,14 @@ class L2P(ContinualModel):
         args.lr = args.lr * args.batch_size / 256.0  # scale learning rate by batch size
         backbone = L2PModel(args)
 
+        # Freeze every parameter except those in the final fc layer.
+        for name, param in backbone.named_parameters():
+            if "model.head" in name and "original_model.head" not in name:
+                param.requires_grad = True
+            else:
+                param.requires_grad = False
+
+
         super().__init__(backbone, loss, args, transform, dataset=dataset)
 
     def begin_task(self, dataset):

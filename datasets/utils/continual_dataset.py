@@ -203,7 +203,8 @@ class ContinualDataset(object):
                 # if self.args.seed is not None:
                 #     np.random.seed(self.args.seed)
                 # self.args.class_order = np.random.permutation(self.N_CLASSES)
-                self.args.class_order = np.array([69, 23, 57, 12, 89, 87, 34, 84, 3, 15, 47, 74, 75, 30, 52, 38, 37, 26, 72, 25, 46, 67, 61, 4, 64, 77, 16, 71, 28, 96, 78, 48, 88, 99, 65, 62, 82, 50, 19, 94, 10, 41, 60, 18, 39, 32, 79, 76, 91, 97, 27, 90, 45, 29, 49, 14, 1, 98, 20, 35, 43, 83, 80, 85, 58, 7, 59, 95, 0, 81, 21, 53, 42, 92, 8, 86, 9, 22, 2, 44, 17, 31, 33, 36, 5, 24, 63, 66, 70, 11, 6, 40, 13, 93, 73, 51, 54, 56, 55, 68])
+                # Correct inverse mapping so class 87 appears first, class 0 second, etc.
+                self.args.class_order = np.array([1, 50, 84, 67, 28, 76, 52, 93, 18, 57, 12, 27, 43, 91, 17, 9, 68, 40, 22, 71, 47, 69, 65, 82, 23, 46, 97, 64, 51, 36, 81, 58, 24, 62, 94, 98, 66, 44, 60, 99, 80, 42, 77, 75, 4, 25, 53, 33, 87, 14, 37, 8, 2, 56, 96, 95, 86, 38, 3, 45, 70, 16, 54, 61, 89, 78, 31, 29, 6, 30, 72, 88, 13, 49, 63, 59, 79, 32, 15, 34, 48, 41, 55, 39, 20, 83, 19, 0, 26, 74, 73, 5, 11, 35, 10, 85, 21, 7, 90, 92])
 
         if args.label_perc != 1 or args.label_perc_by_class != 1:
             self.unlabeled_rng = np.random.RandomState(args.seed)
@@ -437,14 +438,40 @@ def store_masked_loaders(train_dataset: Dataset, test_dataset: Dataset,
     if not isinstance(test_dataset.targets, np.ndarray):
         test_dataset.targets = np.array(test_dataset.targets)
 
+    # # Log original class distribution before reordering
+    # print(f"\n=== LONG-TAIL CONTINUAL LEARNING SETUP ===")
+    # print(f"Task {setting.c_task}: Original class distribution (before reordering):")
+    # unique_classes, counts = np.unique(train_dataset.targets, return_counts=True)
+    # for cls, count in zip(unique_classes, counts):
+    #     print(f"  Original CIFAR class {cls}: {count} samples")
+
     # Permute classes
     if setting.args.permute_classes:
+        print(f"\nApplying class reordering...")
 
+        # # Show mapping verification for first few classes
         class_order = np.array(setting.args.class_order)
+        # desired_order = [87, 0, 52, 58, 44, 91, 68, 97, 51, 15, 94, 92, 10, 72, 49, 78, 61, 14, 8, 86]  # First 20 of desired order
+        # print(f"Class mapping verification (first 20 classes):")
+        # for i, desired_orig_class in enumerate(desired_order):
+        #     if i < len(class_order):
+        #         mapped_pos = class_order[desired_orig_class]
+        #         print(f"  Original CIFAR class {desired_orig_class} → Position {mapped_pos} (should be {i})")
+
+        # Store original targets for final logging
+        original_train_targets = train_dataset.targets.copy()
+
         train_dataset.targets = class_order[train_dataset.targets]
-        # train_dataset.targets = setting.args.class_order[train_dataset.targets]
-        # test_dataset.targets = setting.args.class_order[test_dataset.targets]
         test_dataset.targets = class_order[(test_dataset.targets)]
+
+        # # Log class distribution after reordering
+        # print(f"\nAfter reordering - class distribution:")
+        # unique_classes_new, counts_new = np.unique(train_dataset.targets, return_counts=True)
+        # for new_cls, count in zip(unique_classes_new, counts_new):
+        #     # Find which original class this new class corresponds to
+        #     orig_cls = np.where(class_order == new_cls)[0]
+        #     orig_cls_str = str(orig_cls[0]) if len(orig_cls) > 0 else "unknown"
+        #     print(f"  New class {new_cls} (orig CIFAR class {orig_cls_str}): {count} samples")
 
 
     # Setup validation
@@ -496,17 +523,53 @@ def store_masked_loaders(train_dataset: Dataset, test_dataset: Dataset,
             else:
                 raise ValueError('Unknown validation mode: {}'.format(setting.args.validation_mode))
 
-        test_dataset.data = test_dataset.data[test_mask]
+        #### All the values in train_mask and test_mask are False, and that is what makes them arrays of len 0
+        # test_dataset.data = np.array(test_dataset.data)[test_mask].tolist() 
+        test_dataset.data = [d for d, m in zip(test_dataset.data, test_mask) if m]
+
+        # test_dataset.data = test_dataset.data[test_mask]
         test_dataset.targets = test_dataset.targets[test_mask]
         test_dataset.indexes = test_dataset.indexes[test_mask]
         if hasattr(test_dataset, 'task_ids'):
             test_dataset.task_ids = test_dataset.task_ids[test_mask]
 
-        train_dataset.data = train_dataset.data[train_mask]
+        
+        # train_dataset.data = train_dataset.data[train_mask] ## This is the line that makes it 0
+        train_dataset.data = [d for d, m in zip(train_dataset.data, train_mask) if m]
+
         train_dataset.targets = train_dataset.targets[train_mask]
         train_dataset.indexes = train_dataset.indexes[train_mask]
         if hasattr(train_dataset, 'task_ids'):
             train_dataset.task_ids = train_dataset.task_ids[train_mask]
+
+        # Log final task-specific class distribution
+        print(f"\n=== TASK {setting.c_task} FINAL CLASS DISTRIBUTION ===")
+        if len(train_dataset.targets) > 0:
+            start_c, end_c = setting.get_offsets()
+            print(f"Task {setting.c_task} classes: {start_c} to {end_c-1}")
+
+            unique_task_classes, task_counts = np.unique(train_dataset.targets, return_counts=True)
+            print(f"Classes in Task {setting.c_task}:")
+
+            # Create reverse mapping to find original CIFAR classes
+            reverse_class_order = np.zeros(100, dtype=int)
+            if setting.args.permute_classes:
+                class_order = np.array(setting.args.class_order)
+                for orig_class in range(100):
+                    reverse_class_order[class_order[orig_class]] = orig_class
+
+            total_samples = 0
+            for task_cls, count in zip(unique_task_classes, task_counts):
+                if setting.args.permute_classes and task_cls < len(reverse_class_order):
+                    orig_cifar_class = reverse_class_order[task_cls]
+                    print(f"  New class {task_cls} (Original CIFAR class {orig_cifar_class}): {count} samples")
+                else:
+                    print(f"  Class {task_cls}: {count} samples")
+                total_samples += count
+            print(f"Total samples in Task {setting.c_task}: {total_samples}")
+        else:
+            print(f"WARNING: Task {setting.c_task} has no training samples!")
+        print("=" * 50)
 
         if setting.SETTING == 'biased-class-il':
             assert hasattr(test_dataset, 'bias_label'), 'The dataset must have the bias label field (used during evaluation).'
@@ -517,6 +580,7 @@ def store_masked_loaders(train_dataset: Dataset, test_dataset: Dataset,
     train_dataset, test_dataset = _prepare_data_loaders(train_dataset, test_dataset, setting)
 
     # Create dataloaders
+    
     train_loader = create_seeded_dataloader(setting.args, train_dataset,
                                             batch_size=setting.args.batch_size, shuffle=True, drop_last=setting.args.drop_last)
     test_loader = create_seeded_dataloader(setting.args, test_dataset,

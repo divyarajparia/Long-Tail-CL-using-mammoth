@@ -42,12 +42,26 @@ class IMBALANCECIFAR100(CIFAR100):
         self.gen_imbalanced_data(img_num_list)
 
     def get_img_num_per_cls(self, cls_num, imb_type, imb_factor):
+        print(f"\n=== IMBALANCING CIFAR-100 CLASSES ===")
+        print(f"Imbalance type: {imb_type}")
+        print(f"Imbalance factor: {imb_factor}")
+        print(f"Total classes: {cls_num}")
+
         img_max = len(self.data) / cls_num
+        print(f"Original samples per class: {img_max}")
+
         img_num_per_cls = []
         if imb_type == 'exp':
+            print(f"Applying exponential imbalancing...")
             for cls_idx in range(cls_num):
                 num = img_max * (imb_factor**(cls_idx / (cls_num - 1.0)))
                 img_num_per_cls.append(int(num))
+
+            print(f"After exponential imbalancing:")
+            print(f"  Max class (class 0): {img_num_per_cls[0]} samples")
+            print(f"  Min class (class {cls_num-1}): {img_num_per_cls[-1]} samples")
+            print(f"  Imbalance ratio: {img_num_per_cls[0] / img_num_per_cls[-1]:.2f}")
+
         elif imb_type == 'step':
             for cls_idx in range(cls_num // 2):
                 img_num_per_cls.append(int(img_max))
@@ -182,6 +196,16 @@ class SequentialCIFAR100(ContinualDataset):
     SIZE = (32, 32)
     MEAN, STD = (0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)
 
+    def __init__(self, args: Namespace, imb_factor: float = 0.1) -> None:
+        """Initialize SequentialCIFAR100 dataset.
+
+        Args:
+            args: Arguments namespace containing hyperparameters
+            imb_factor: Imbalance factor for the dataset (default: 0.1)
+        """
+        super().__init__(args)
+        self.imb_factor = imb_factor
+
     TRANSFORM = transforms.Compose([
         transforms.Resize((224, 224)), #Added this line for l2p, as it needs 224 * 224 images
         # transforms.RandomCrop(32, padding=4),
@@ -198,6 +222,14 @@ class SequentialCIFAR100(ContinualDataset):
 
 
     def get_data_loaders(self) -> Tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
+        print(f"\n=== DATASET INITIALIZATION ===")
+        print(f"Dataset: {self.NAME}")
+        print(f"Setting: {self.SETTING}")
+        print(f"N_TASKS: {self.N_TASKS}")
+        print(f"N_CLASSES_PER_TASK: {self.N_CLASSES_PER_TASK}")
+        print(f"Imbalance factor: {self.imb_factor}")
+        print(f"Current task: {self.c_task + 1}")
+
         transform = self.TRANSFORM
 
         # test_transform = transforms.Compose(
@@ -205,7 +237,7 @@ class SequentialCIFAR100(ContinualDataset):
 
         # This is for the l2p model, as it uses a ViT backbone
         test_transform = transforms.Compose([
-        transforms.Resize((224, 224)),               
+        transforms.Resize((224, 224)),
         transforms.ToTensor(),
         self.get_normalization_transform()
     ])
@@ -215,9 +247,11 @@ class SequentialCIFAR100(ContinualDataset):
         #                            download=True, transform=transform)
         # test_dataset = TCIFAR100(base_path() + 'CIFAR100', train=False,
         #                          download=True, transform=test_transform)
-        
+
+        print(f"Creating IMBALANCED CIFAR-100 dataset with imb_factor={self.imb_factor}")
+        # Use the imb_factor from instance attribute
         train_dataset = IMBALANCECIFAR100(base_path() + 'CIFAR100', train=True,
-                                   download=True, transform=transform, imb_factor=0.01)
+                                   download=True, transform=transform, imb_factor=self.imb_factor)
         test_dataset = TCIFAR100(base_path() + 'CIFAR100', train=False,
                                  download=True, transform=test_transform)
 

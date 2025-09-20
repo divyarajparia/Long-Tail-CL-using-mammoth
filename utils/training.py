@@ -295,8 +295,8 @@ def train(model: ContinualModel, dataset: ContinualDataset,
                     train_pbar.set_description(f"Task {t + 1} - Epoch {epoch + 1}")
 
                     # train_single_epoch function is where the model is trained for this epoch
-                    train_single_epoch(model, train_loader, args, pbar=train_pbar, epoch=epoch,
-                                       system_tracker=system_tracker, scheduler=scheduler)
+                    # train_single_epoch(model, train_loader, args, pbar=train_pbar, epoch=epoch,
+                    #                    system_tracker=system_tracker, scheduler=scheduler)
 
                     model.end_epoch(epoch, dataset)
 

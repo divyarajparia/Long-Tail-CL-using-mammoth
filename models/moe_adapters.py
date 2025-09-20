@@ -25,7 +25,7 @@ class Model(torch.nn.Module):
         self.device = device
         self.classes_names = self.dataset.get_class_names()
         self.model, self.clip_preprocess, _ = clip.load(args.clip_backbone, device=self.device, jit=False)
-
+        
         self.text_tokens = clip.tokenize(
             [self.prompt_template.format(c) for c in self.classes_names]
         ).to(self.device)

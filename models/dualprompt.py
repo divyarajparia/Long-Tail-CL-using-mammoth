@@ -72,6 +72,15 @@ class DualPrompt(ContinualModel):
         tmp_dataset = get_dataset(args) if dataset is None else dataset
         backbone = Model(args, tmp_dataset.N_CLASSES)
 
+        #### Line added to freeze the entire backbone model
+        # Freeze every parameter except those in the final fc layer.
+        for name, param in backbone.named_parameters():
+            # for name, param in backbone.named_parameters():
+            if "model.head" in name and "original_model.head" not in name:
+                param.requires_grad = True
+            else:
+                param.requires_grad = False
+                
         super().__init__(backbone, loss, args, transform, dataset=dataset)
 
     def begin_task(self, dataset):
@@ -94,7 +103,9 @@ class DualPrompt(ContinualModel):
                     if self.net.model.e_prompt.prompt.grad is not None:
                         self.net.model.e_prompt.prompt.grad.zero_()
                     self.net.model.e_prompt.prompt[cur_idx] = self.net.model.e_prompt.prompt[prev_idx]
-                    self.opt.param_groups[0]['params'] = self.net.model.parameters()
+                    ### Change made because backbone is frozen
+                    self.opt.param_groups[0]['params'] = [p for p in self.net.model.parameters() if p.requires_grad]
+                    # self.opt.param_groups[0]['params'] = self.net.model.parameters()
 
         self.opt = self.get_optimizer()
         self.net.original_model.eval()

@@ -418,12 +418,73 @@ def main(args=None):
     # train(model, dataset, args)
     file_dataset = args.dataset
     file_model = args.model
-    file_name = "log_" + file_model + "_" + file_dataset + "_basicrun"
-    print(file_dataset, file_model)
-    with open(file_name, "w") as file:
-        train(model, dataset, args, log_file = file)
+
+    import os
+    from datetime import datetime
+    import time
+
+    # Check if logging is enabled
+    enable_logging = getattr(args, 'enable_logging', True)
+
+    # Measure the time taken for the train function
+    start_time = time.time()
+
+    if enable_logging:
+        # Define your log folder
+        log_folder = "dmr_logs"
+
+        # Create the folder if it doesn't exist
+        if not os.path.exists(log_folder):
+            os.makedirs(log_folder)
+
+        # Create a timestamp
+        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+
+        # Get imb_factor for filename
+        imb_factor = getattr(args, 'imb_factor', None)
+        if imb_factor is not None:
+            imb_factor_str = f"{imb_factor}"
+        else:
+            # Try to get from dataset config if available
+            if hasattr(dataset, 'imb_factor'):
+                imb_factor_str = f"{dataset.imb_factor}"
+            else:
+                imb_factor_str = "default"
+
+        # Build your log file name and path: dataset-model-imb_factor-date
+        file_name = f"{file_dataset}_{file_model}_{imb_factor_str}_{timestamp}.log"
+        log_file_path = os.path.join(log_folder, file_name)
+
+        print(f"Logging enabled: Writing to {log_file_path}")
+
+        with open(log_file_path, "w") as file:
+            train(model, dataset, args, log_file=file)
+
+        # Log the total time taken
+        end_time = time.time()
+        total_time = end_time - start_time
+        with open(log_file_path, "a") as file:
+            file.write(f"\nTotal time taken for training: {total_time:.2f} seconds\n")
+
+        print(f"Training completed. Log saved to: {log_file_path}")
+    else:
+        print("Logging disabled: Running without file logging")
+        train(model, dataset, args)
+        end_time = time.time()
+        total_time = end_time - start_time
+        print(f"Training completed in {total_time:.2f} seconds (no log file created)")
+    
+
+    # from datetime import datetime
+    # timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    # file_name = f"log_{file_model}_{file_dataset}_{timestamp}"
+    # print(file_dataset, file_model)
+    # with open(file_name, "w") as file:
+    #     train(model, dataset, args, log_file = file)
 
 
 
 if __name__ == '__main__':
+    
     main()
+

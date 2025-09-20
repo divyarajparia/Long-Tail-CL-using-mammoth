@@ -44,7 +44,21 @@ class CodaPrompt(ContinualModel):
         self.n_classes = self.dataset.N_CLASSES
         self.n_tasks = self.dataset.N_TASKS
         backbone = Model(num_classes=self.n_classes, pt=True, prompt_param=[self.n_tasks, [args.pool_size, args.prompt_len, 0]])
+
+        
         super().__init__(backbone, loss, args, transform, dataset=dataset)
+        ### Line added to freeze the entire backbone model
+        # Freeze every parameter except those in the final fc layer.
+        # for name, param in backbone.named_parameters():
+        #     if "last" in name:
+        #         param.requires_grad = True
+        #     else:
+        #         param.requires_grad = False
+        
+        for name, param in backbone.feat.named_parameters():
+            param.requires_grad = False
+        
+        
         self.net.task_id = 0
         self.opt = self.get_optimizer()
 

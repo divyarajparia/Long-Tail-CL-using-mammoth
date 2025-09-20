@@ -61,7 +61,7 @@ class SLCA(ContinualModel):
 
         # # self.class_counts = torch.zeros(self.num_classes)
         # self.class_counts = torch.zeros(self.num_classes)
-        # self.log_priors = None
+        # self.adjustments = None
         # self.logit_adjustment_temperature = 1.0
 
     def get_parameters(self):
@@ -77,8 +77,8 @@ class SLCA(ContinualModel):
             self.class_means[k] = class_means[k]
             self.class_covs[k] = class_covs[k]
 
-        if self.current_task > 0:
-            self.net._stage2_compact_classifier(self.class_means, self.class_covs, self.offset_1, self.offset_2)
+        # if self.current_task > 0:
+        self.net._stage2_compact_classifier(self.class_means, self.class_covs, self.offset_1, self.offset_2)
 
         # total_class_counts = 0
         # for _, labels, _ in dataset.train_loader:
@@ -108,7 +108,7 @@ class SLCA(ContinualModel):
         logits = self.net._network(inputs, bcb_no_grad=self.net.fix_bcb)['logits']
 
         # For ad-hoc logit adjustment uncomment following line
-        # adjusted_logits = logits + self.logit_adjustment_temperature * self.adjustments[:logits.size(1)]
+        # adjusted_logits = logits + self.adjustments[:logits.size(1)]
 
         loss = self.loss(logits[:, self.offset_1:self.offset_2], labels - self.offset_1)
 
@@ -126,10 +126,29 @@ class SLCA(ContinualModel):
     def forward(self, x):
         logits = self.net._network(x)['logits']
         return logits[:, :self.offset_2]
+    
         # logits = logits[:, :self.offset_2]
 
-        # if (not self.training) and (self.log_priors is not None):
-        #     adjusted_logits = logits - self.logit_adjustment_temperature * self.adjustments[:logits.size(1)]
+        # # if (not self.training) and (self.adjustments is not None):
+        # if self.adjustments is not None:
+        #     adjusted_logits = logits - self.adjustments[:logits.size(1)]
         #     return adjusted_logits
         # else:
         #     return logits
+        
+### To track function stack
+# import os
+# import traceback
+
+# # Get the current call stack
+# stack = traceback.extract_stack()
+
+# # Define your project path (adjust if needed)
+# project_path = os.path.abspath("/data1/es22btech11013/Long-Tail-CL-using-mammoth")
+
+# # Filter for frames in your project
+# filtered = [frame for frame in stack if project_path in frame.filename]
+
+# print("Filtered stack trace:")
+# for frame in filtered:
+#     print(f"{frame.filename}:{frame.lineno} in {frame.name}")

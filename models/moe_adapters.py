@@ -92,8 +92,17 @@ class MoEAdapters(FutureModel):
 
         num_batches = len(dataset.train_loader)
         total_iterations = self.args.n_epochs * num_batches
-        # reducing warmup_length from 30 to 25
-        self.custom_scheduler = CosineSchedulerWithLinearWarmup(self.opt, self.args.lr, 25, total_iterations)
+
+        # Dynamic warmup length: 10% of total iterations, but at least 1 and at most total_iterations - 1
+        warmup_percent = 0.1
+        print(f"warmup_percent : {warmup_percent}")
+        warmup_length = int(total_iterations * warmup_percent)
+        # Ensure warmup_length is at least 1 and less than total_iterations
+        warmup_length = max(1, min(warmup_length, total_iterations - 1))
+        if total_iterations <= 1:
+            warmup_length = 1 
+        
+        self.custom_scheduler = CosineSchedulerWithLinearWarmup(self.opt, self.args.lr, warmup_length, total_iterations)
 
     def change_transform(self, dataset):
         dataset.train_loader.dataset.transform = self.net.clip_preprocess

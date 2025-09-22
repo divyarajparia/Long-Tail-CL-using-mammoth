@@ -357,7 +357,7 @@ def add_management_args(parser: ArgumentParser) -> None:
                            help='Perform inference on validation every `eval_epochs` epochs. If not provided, the model is evaluated ONLY at the end of each task.')
     mng_group.add_argument('--non_verbose', default=0, type=binary_to_boolean_type, help='Make progress bars non verbose')
     mng_group.add_argument('--disable_log', default=0, type=binary_to_boolean_type, help='Disable logging?')
-    mng_group.add_argument('--enable_logging', type=binary_to_boolean_type, default=True, help='Enable file logging to dmr_logs folder with dataset-model-imb_factor-timestamp format.')
+    mng_group.add_argument('--enable_logging', type=binary_to_boolean_type, default=True, help='Enable file logging to final_logs folder with dataset-model-imb_factor-timestamp format.')
     mng_group.add_argument('--num_workers', type=int, default=None, help='Number of workers for the dataloaders (default=infer from number of cpus).')
     mng_group.add_argument('--enable_other_metrics', default=0, type=binary_to_boolean_type,
                            help='Enable computing additional metrics: forward and backward transfer.')

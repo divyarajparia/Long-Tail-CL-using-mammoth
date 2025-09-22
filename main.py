@@ -431,7 +431,7 @@ def main(args=None):
 
     if enable_logging:
         # Define your log folder
-        log_folder = "dmr_logs"
+        log_folder = "final_logs"
 
         # Create the folder if it doesn't exist
         if not os.path.exists(log_folder):
@@ -451,8 +451,8 @@ def main(args=None):
             else:
                 imb_factor_str = "default"
 
-        # Build your log file name and path: dataset-model-imb_factor-date
-        file_name = f"{file_dataset}_{file_model}_{imb_factor_str}_{timestamp}.log"
+        # Build your log file name and path: model-dataset-imb_factor-date
+        file_name = f"{file_model}_{file_dataset}_{imb_factor_str}_{timestamp}.log"
         log_file_path = os.path.join(log_folder, file_name)
 
         print(f"Logging enabled: Writing to {log_file_path}")

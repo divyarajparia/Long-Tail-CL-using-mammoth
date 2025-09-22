@@ -83,6 +83,9 @@ class CosineSchedulerWithLinearWarmup(_LRScheduler):
             else:
                 e = self.last_epoch - self.warmup_length
                 es = self.steps - self.warmup_length
-                lr = 0.5 * (1 + np.cos(np.pi * e / es)) * base_lr
+                if es == 0:  # Prevent division by zero
+                    lr = base_lr
+                else:
+                    lr = 0.5 * (1 + np.cos(np.pi * e / es)) * base_lr
             ret_lrs.append(lr)
         return ret_lrs

@@ -11,6 +11,7 @@ from utils.args import *
 from models.utils.continual_model import ContinualModel
 import torch
 from datasets import get_dataset
+import numpy as np
 from models.coda_prompt_utils.model import Model
 from utils.schedulers import CosineSchedule
 
@@ -44,7 +45,21 @@ class CodaPrompt(ContinualModel):
         self.n_classes = self.dataset.N_CLASSES
         self.n_tasks = self.dataset.N_TASKS
         backbone = Model(num_classes=self.n_classes, pt=True, prompt_param=[self.n_tasks, [args.pool_size, args.prompt_len, 0]])
+
+        
         super().__init__(backbone, loss, args, transform, dataset=dataset)
+        ### Line added to freeze the entire backbone model
+        # Freeze every parameter except those in the final fc layer.
+        # for name, param in backbone.named_parameters():
+        #     if "last" in name:
+        #         param.requires_grad = True
+        #     else:
+        #         param.requires_grad = False
+        
+        for name, param in backbone.feat.named_parameters():
+            param.requires_grad = False
+        
+        
         self.net.task_id = 0
         self.opt = self.get_optimizer()
 
@@ -62,6 +77,26 @@ class CodaPrompt(ContinualModel):
         return opt
 
     def begin_task(self, dataset):
+        # === START OF YOUR VERIFICATION CODE ===
+        
+        # This model uses `self.current_task` to track the task ID
+        task_id = self.current_task 
+        print("\n" + "="*80)
+        print(f"CODA-Prompt - CROSS-CHECKING TASK {task_id}")
+        try:
+            current_train_loader = dataset.train_loader
+            all_labels = np.array(current_train_loader.dataset.targets)
+            unique_labels, counts = np.unique(all_labels, return_counts=True)
+            print(f"Task {task_id} - Unique Labels Loaded: {unique_labels}")
+            print(f"Task {task_id} - Label Counts: {counts}")
+            if len(counts) > 1 and not np.all(counts == counts[0]):
+                print("SUCCESS: Label counts are imbalanced, indicating a long-tail distribution.")
+            else:
+                print("NOTE: Label counts appear balanced.")
+        except Exception as e:
+            print(f"Could not automatically inspect labels: {e}")
+        print("="*80 + "\n")
+        # === END OF YOUR VERIFICATION CODE ===
         self.offset_1, self.offset_2 = self.dataset.get_offsets(self.current_task)
 
         if self.current_task != 0:

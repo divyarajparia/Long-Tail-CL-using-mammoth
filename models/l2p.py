@@ -8,7 +8,7 @@ Note:
 
 import logging
 import torch
-
+import numpy as np
 from models.utils.continual_model import ContinualModel
 from utils import binary_to_boolean_type
 from utils.args import ArgumentParser
@@ -66,9 +66,46 @@ class L2P(ContinualModel):
         args.lr = args.lr * args.batch_size / 256.0  # scale learning rate by batch size
         backbone = L2PModel(args)
 
+        # Freeze every parameter except those in the final fc layer.
+        for name, param in backbone.named_parameters():
+            if "model.head" in name and "original_model.head" not in name:
+                param.requires_grad = True
+            else:
+                param.requires_grad = False
+
+
         super().__init__(backbone, loss, args, transform, dataset=dataset)
 
+    # In l2p.py -> inside the L2P class
     def begin_task(self, dataset):
+        # === START OF FINAL VERIFICATION CODE ===
+        # This is the correct, robust way to get the task ID from the Mammoth dataset object.
+        # dataset.i tracks the index of the first class for the current task.
+        task_id =  dataset.c_task
+        
+        print("\n" + "="*80)
+        print(f"L2P - CROSS-CHECKING TASK {task_id}")
+        
+        try:
+            current_train_loader = dataset.train_loader
+            all_labels = np.array(current_train_loader.dataset.targets)
+            unique_labels, counts = np.unique(all_labels, return_counts=True)
+            
+            print(f"Task {task_id} - Unique Labels Loaded: {unique_labels}")
+            print(f"Task {task_id} - Label Counts (first 10): {counts[:10]}")
+            
+            if len(counts) > 1 and not np.all(counts == counts[0]):
+                print("SUCCESS: Label counts are imbalanced, indicating a long-tail distribution.")
+            else:
+                print("NOTE: Label counts appear balanced.")
+
+        except Exception as e:
+            print(f"Could not automatically inspect labels: {e}")
+        
+        print("="*80 + "\n")
+        # === END OF FINAL VERIFICATION CODE ===
+
+        # Original L2P begin_task logic
         self.net.original_model.eval()
 
         if hasattr(self, 'opt'):

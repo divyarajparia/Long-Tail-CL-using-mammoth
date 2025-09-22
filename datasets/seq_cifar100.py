@@ -32,7 +32,7 @@ class TCIFAR100(CIFAR100):
 class IMBALANCECIFAR100(CIFAR100):
     cls_num = 100
 
-    def __init__(self, root, imb_type='exp', imb_factor=0.01, rand_number=0, train=True,
+    def __init__(self, root, imb_type='exp', imb_factor=0.1, rand_number=0, train=True,
                  transform=None, target_transform=None,
                  download=False):
         self.not_aug_transform = transforms.Compose([transforms.ToTensor()])
@@ -215,11 +215,32 @@ class SequentialCIFAR100(ContinualDataset):
         #                            download=True, transform=transform)
         # test_dataset = TCIFAR100(base_path() + 'CIFAR100', train=False,
         #                          download=True, transform=test_transform)
-        
-        train_dataset = IMBALANCECIFAR100(base_path() + 'CIFAR100', train=True,
-                                   download=True, transform=transform, imb_factor=0.01)
-        test_dataset = TCIFAR100(base_path() + 'CIFAR100', train=False,
-                                 download=True, transform=test_transform)
+        # --- START OF FINAL, CORRECT MODIFICATION ---
+        if hasattr(self.args, 'long_tail') and self.args.long_tail:
+            print(f"INFO: Creating LONG-TAIL CIFAR-100 with imbalance factor: {self.args.imb_factor}")
+            train_dataset = IMBALANCECIFAR100(
+                base_path() + 'CIFAR100',
+                train=True,
+                download=True,
+                transform=transform,
+                imb_factor=self.args.imb_factor
+            )
+        else:
+            print("INFO: Creating BALANCED CIFAR-100.")
+            train_dataset = IMBALANCECIFAR100(
+                base_path() + 'CIFAR100',
+                train=True,
+                download=True,
+                transform=transform
+            )
+
+        test_dataset = TCIFAR100(
+            base_path() + 'CIFAR100',
+            train=False,
+            download=True,
+            transform=test_transform
+        )
+        # --- END OF FINAL, CORRECT MODIFICATION ---
 
         train, test = store_masked_loaders(train_dataset, test_dataset, self)
 

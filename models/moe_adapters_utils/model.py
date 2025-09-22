@@ -284,10 +284,10 @@ class ResidualAttentionBlock(nn.Module):
         self.ln_2 = LayerNorm(d_model)
         self.attn_mask = attn_mask
         self.is_train = global_is_train
-        self.step = 1
+        self.step = 5
         self.top_k = 2
         self.ffn_num = 64
-        self.experts_num = 2
+        self.experts_num = 12
         self.softmax = nn.Softmax(1)
         self.softplus = nn.Softplus()
         self.noisy_gating = True
@@ -419,7 +419,7 @@ class ResidualAttentionBlock(nn.Module):
             x_re = x.permute(1, 0, 2)[:, 0, :]
             gates, load = self.noisy_top_k_gating(x_re, self.is_train, self.router_list[global_taskid],
                                                   self.w_noise_list[global_taskid])
-            importance = gates.sum(0)
+            importance = gates.sum(0)   
 
             nonzero_indices = torch.nonzero(gates)
             counter = Counter(nonzero_indices[:, 1].tolist())
@@ -627,6 +627,8 @@ class CLIP(nn.Module):
     def forward(self, image, text, taskid, is_train):
         global global_taskid, global_is_train
         global_taskid = taskid
+        if taskid != 0:
+            a = 0
         global_is_train = is_train
         if image is None:
             return self.encode_text(text)

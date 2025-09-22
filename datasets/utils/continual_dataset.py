@@ -496,13 +496,20 @@ def store_masked_loaders(train_dataset: Dataset, test_dataset: Dataset,
             else:
                 raise ValueError('Unknown validation mode: {}'.format(setting.args.validation_mode))
 
-        test_dataset.data = test_dataset.data[test_mask]
+        #### All the values in train_mask and test_mask are False, and that is what makes them arrays of len 0
+        # test_dataset.data = np.array(test_dataset.data)[test_mask].tolist() 
+        test_dataset.data = [d for d, m in zip(test_dataset.data, test_mask) if m]
+
+        # test_dataset.data = test_dataset.data[test_mask]
         test_dataset.targets = test_dataset.targets[test_mask]
         test_dataset.indexes = test_dataset.indexes[test_mask]
         if hasattr(test_dataset, 'task_ids'):
             test_dataset.task_ids = test_dataset.task_ids[test_mask]
 
-        train_dataset.data = train_dataset.data[train_mask]
+        
+        # train_dataset.data = train_dataset.data[train_mask] ## This is the line that makes it 0
+        train_dataset.data = [d for d, m in zip(train_dataset.data, train_mask) if m]
+
         train_dataset.targets = train_dataset.targets[train_mask]
         train_dataset.indexes = train_dataset.indexes[train_mask]
         if hasattr(train_dataset, 'task_ids'):
@@ -517,6 +524,7 @@ def store_masked_loaders(train_dataset: Dataset, test_dataset: Dataset,
     train_dataset, test_dataset = _prepare_data_loaders(train_dataset, test_dataset, setting)
 
     # Create dataloaders
+    
     train_loader = create_seeded_dataloader(setting.args, train_dataset,
                                             batch_size=setting.args.batch_size, shuffle=True, drop_last=setting.args.drop_last)
     test_loader = create_seeded_dataloader(setting.args, test_dataset,

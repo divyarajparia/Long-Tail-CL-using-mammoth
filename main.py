@@ -418,12 +418,47 @@ def main(args=None):
     # train(model, dataset, args)
     file_dataset = args.dataset
     file_model = args.model
-    file_name = "log_" + file_model + "_" + file_dataset + "_basicrun"
-    print(file_dataset, file_model)
-    with open(file_name, "w") as file:
-        train(model, dataset, args, log_file = file)
+
+    import os
+    from datetime import datetime
+    import time
+
+    # Define your log folder
+    log_folder = "dmr_logs"
+
+    # Create the folder if it doesn't exist
+    if not os.path.exists(log_folder):
+        os.makedirs(log_folder)
+
+    # Create a timestamp
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+
+    # Build your log file name and path
+    file_name = f"{file_model}_{file_dataset}_{timestamp}imb10.log"
+    log_file_path = os.path.join(log_folder, file_name)
+
+    # Measure the time taken for the train function
+    start_time = time.time()
+    with open(log_file_path, "w") as file:
+        train(model, dataset, args, log_file=file)
+    end_time = time.time()
+
+    # Log the total time taken
+    total_time = end_time - start_time
+    with open(log_file_path, "a") as file:
+        file.write(f"\nTotal time taken for training: {total_time:.2f} seconds\n")
+    
+
+    # from datetime import datetime
+    # timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    # file_name = f"log_{file_model}_{file_dataset}_{timestamp}"
+    # print(file_dataset, file_model)
+    # with open(file_name, "w") as file:
+    #     train(model, dataset, args, log_file = file)
 
 
 
 if __name__ == '__main__':
+    
     main()
+

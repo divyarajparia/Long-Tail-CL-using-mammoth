@@ -9,6 +9,7 @@ Note:
 import logging
 import torch
 from models.dualprompt_utils.model import Model
+import numpy as np
 
 from models.utils.continual_model import ContinualModel
 from utils import binary_to_boolean_type
@@ -72,9 +73,36 @@ class DualPrompt(ContinualModel):
         tmp_dataset = get_dataset(args) if dataset is None else dataset
         backbone = Model(args, tmp_dataset.N_CLASSES)
 
+        #### Line added to freeze the entire backbone model
+        # Freeze every parameter except those in the final fc layer.
+        for name, param in backbone.named_parameters():
+            # for name, param in backbone.named_parameters():
+            if "model.head" in name and "original_model.head" not in name:
+                param.requires_grad = True
+            else:
+                param.requires_grad = False
+                
         super().__init__(backbone, loss, args, transform, dataset=dataset)
 
     def begin_task(self, dataset):
+        # === START OF YOUR VERIFICATION CODE ===
+        task_id = self.n_past_classes // self.dataset.N_CLASSES_PER_TASK
+        print("\n" + "="*80)
+        print(f"DualPrompt - CROSS-CHECKING TASK {task_id}")
+        try:
+            current_train_loader = dataset.train_loader
+            all_labels = np.array(current_train_loader.dataset.targets)
+            unique_labels, counts = np.unique(all_labels, return_counts=True)
+            print(f"Task {task_id} - Unique Labels Loaded: {unique_labels}")
+            print(f"Task {task_id} - Label Counts: {counts}")
+            if len(counts) > 1 and not np.all(counts == counts[0]):
+                print("SUCCESS: Label counts are imbalanced, indicating a long-tail distribution.")
+            else:
+                print("NOTE: Label counts appear balanced.")
+        except Exception as e:
+            print(f"Could not automatically inspect labels: {e}")
+        print("="*80 + "\n")
+        # === END OF YOUR VERIFICATION CODE ===
         self.offset_1, self.offset_2 = self.dataset.get_offsets(self.current_task)
 
         if self.current_task > 0:
@@ -94,7 +122,9 @@ class DualPrompt(ContinualModel):
                     if self.net.model.e_prompt.prompt.grad is not None:
                         self.net.model.e_prompt.prompt.grad.zero_()
                     self.net.model.e_prompt.prompt[cur_idx] = self.net.model.e_prompt.prompt[prev_idx]
-                    self.opt.param_groups[0]['params'] = self.net.model.parameters()
+                    ### Change made because backbone is frozen
+                    self.opt.param_groups[0]['params'] = [p for p in self.net.model.parameters() if p.requires_grad]
+                    # self.opt.param_groups[0]['params'] = self.net.model.parameters()
 
         self.opt = self.get_optimizer()
         self.net.original_model.eval()

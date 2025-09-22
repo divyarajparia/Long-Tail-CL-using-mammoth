@@ -18,7 +18,7 @@ Requires:
 
 import torch
 import torch.nn as nn
-
+import numpy as np
 from utils import binary_to_boolean_type
 try:
     import clip
@@ -122,6 +122,22 @@ class CLIP(ContinualModel):
         self.original_labels = []
 
     def begin_task(self, dataset):
+        # === START OF YOUR VERIFICATION CODE ===
+        task_id = self.current_task 
+        print("\n" + "="*80)
+        print(f"CLIP - CROSS-CHECKING TASK {task_id}")
+        # For CLIP, the training data is not used for training, but we can check
+        # the test data distribution.
+        try:
+            current_test_loader = dataset.test_loaders[-1] # Get the newest test loader
+            all_labels = np.array(current_test_loader.dataset.targets)
+            unique_labels, counts = np.unique(all_labels, return_counts=True)
+            print(f"Task {task_id} - Unique Labels in CURRENT test loader: {unique_labels}")
+            print(f"Task {task_id} - Label Counts in CURRENT test loader: {counts}")
+        except Exception as e:
+            print(f"Could not automatically inspect labels: {e}")
+        print("="*80 + "\n")
+        # === END OF YOUR VERIFICATION CODE ===
         dataset.test_loaders[-1].dataset.transform = self.clip_transform
         if self.args.save_predictions:
             dataset.train_loader.dataset.transform = self.clip_transform

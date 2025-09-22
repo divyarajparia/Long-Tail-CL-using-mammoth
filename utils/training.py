@@ -246,6 +246,14 @@ def train(model: ContinualModel, dataset: ContinualDataset,
                     can_compute_fwd_beforetask = False
 
             model.meta_begin_task(dataset)
+            
+            # Count model parameters (once per model, at first task)
+            if t == start_task:
+                try:
+                    from utils.parameter_counter import log_parameter_count
+                    log_parameter_count(model, args)
+                except Exception as e:
+                    logging.warning(f"Parameter counting failed: {e}")
 
             # This block also does not execute by default due to can_compute_forward_task being True
             if not can_compute_fwd_beforetask and is_fwd_enabled and args.enable_other_metrics:

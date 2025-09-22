@@ -119,8 +119,13 @@ class VisionTransformer(MammothVP):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
 
+    # import torch.nn.functional as F
+
     def forward(self, x, prompt=None, q=None, train=False, task_id=None):
         B = x.shape[0]
+        # if x.shape[-2:] != (224, 224):
+        #     x = F.interpolate(x, size=(224, 224), mode='bilinear', align_corners=False)
+
         x = self.patch_embed(x)
 
         cls_tokens = self.cls_token.expand(B, -1, -1)  # stole cls_tokens impl from Phil Wang, thanks

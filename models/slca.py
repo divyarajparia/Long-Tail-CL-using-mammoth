@@ -12,6 +12,7 @@ from utils import binary_to_boolean_type
 from utils.args import *
 from models.utils.continual_model import ContinualModel
 
+import numpy as np
 import torch
 from utils.conf import get_device
 from models.slca_utils.slca import SLCA_Model
@@ -61,7 +62,7 @@ class SLCA(ContinualModel):
 
         # # self.class_counts = torch.zeros(self.num_classes)
         # self.class_counts = torch.zeros(self.num_classes)
-        # self.log_priors = None
+        # self.adjustments = None
         # self.logit_adjustment_temperature = 1.0
 
     def get_parameters(self):
@@ -77,8 +78,8 @@ class SLCA(ContinualModel):
             self.class_means[k] = class_means[k]
             self.class_covs[k] = class_covs[k]
 
-        if self.current_task > 0:
-            self.net._stage2_compact_classifier(self.class_means, self.class_covs, self.offset_1, self.offset_2)
+        # if self.current_task > 0:
+        self.net._stage2_compact_classifier(self.class_means, self.class_covs, self.offset_1, self.offset_2)
 
         # total_class_counts = 0
         # for _, labels, _ in dataset.train_loader:
@@ -91,6 +92,24 @@ class SLCA(ContinualModel):
         # self.adjustments = torch.log(class_priors** self.logit_adjustment_temperature + 1e-12).to(self.device)
 
     def begin_task(self, dataset):
+        # === START OF YOUR VERIFICATION CODE ===
+        task_id = self.n_past_classes // self.dataset.N_CLASSES_PER_TASK
+        print("\n" + "="*80)
+        print(f"SLCA - CROSS-CHECKING TASK {task_id}")
+        try:
+            current_train_loader = dataset.train_loader
+            all_labels = np.array(current_train_loader.dataset.targets)
+            unique_labels, counts = np.unique(all_labels, return_counts=True)
+            print(f"Task {task_id} - Unique Labels Loaded: {unique_labels}")
+            print(f"Task {task_id} - Label Counts: {counts}")
+            if len(counts) > 1 and not np.all(counts == counts[0]):
+                print("SUCCESS: Label counts are imbalanced, indicating a long-tail distribution.")
+            else:
+                print("NOTE: Label counts appear balanced.")
+        except Exception as e:
+            print(f"Could not automatically inspect labels: {e}")
+        print("="*80 + "\n")
+        # === END OF YOUR VERIFICATION CODE ===
         if self.current_task > 0:
             self.net._network.fc.recall()
         self.offset_1, self.offset_2 = self.dataset.get_offsets(self.current_task)
@@ -108,7 +127,7 @@ class SLCA(ContinualModel):
         logits = self.net._network(inputs, bcb_no_grad=self.net.fix_bcb)['logits']
 
         # For ad-hoc logit adjustment uncomment following line
-        # adjusted_logits = logits + self.logit_adjustment_temperature * self.adjustments[:logits.size(1)]
+        # adjusted_logits = logits + self.adjustments[:logits.size(1)]
 
         loss = self.loss(logits[:, self.offset_1:self.offset_2], labels - self.offset_1)
 
@@ -126,10 +145,29 @@ class SLCA(ContinualModel):
     def forward(self, x):
         logits = self.net._network(x)['logits']
         return logits[:, :self.offset_2]
+    
         # logits = logits[:, :self.offset_2]
 
-        # if (not self.training) and (self.log_priors is not None):
-        #     adjusted_logits = logits - self.logit_adjustment_temperature * self.adjustments[:logits.size(1)]
+        # # if (not self.training) and (self.adjustments is not None):
+        # if self.adjustments is not None:
+        #     adjusted_logits = logits - self.adjustments[:logits.size(1)]
         #     return adjusted_logits
         # else:
         #     return logits
+        
+### To track function stack
+# import os
+# import traceback
+
+# # Get the current call stack
+# stack = traceback.extract_stack()
+
+# # Define your project path (adjust if needed)
+# project_path = os.path.abspath("/data1/es22btech11013/Long-Tail-CL-using-mammoth")
+
+# # Filter for frames in your project
+# filtered = [frame for frame in stack if project_path in frame.filename]
+
+# print("Filtered stack trace:")
+# for frame in filtered:
+#     print(f"{frame.filename}:{frame.lineno} in {frame.name}")

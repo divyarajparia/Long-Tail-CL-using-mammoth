@@ -8,6 +8,7 @@ import logging
 import torch
 from torch.optim.optimizer import Optimizer as Optimizer
 from argparse import ArgumentParser
+import numpy as np
 
 from models.moe_adapters_utils import clip
 from datasets.utils.continual_dataset import ContinualDataset
@@ -86,6 +87,31 @@ class MoEAdapters(FutureModel):
         return super().get_optimizer()
 
     def begin_task(self, dataset):
+        # This is where the original code might do some setup.
+        # We will add our verification code right here at the top.
+
+        # === START OF YOUR VERIFICATION CODE ===
+        task_id =  dataset.c_task
+        print("\n" + "="*80)
+        print(f"CROSS-CHECKING TASK {task_id}")
+
+        # Extract all labels from the current training set
+        try:
+            current_train_loader = dataset.train_loader
+            all_labels = np.array(current_train_loader.dataset.targets)
+            unique_labels, counts = np.unique(all_labels, return_counts=True)
+            
+            print(f"Task {task_id} - Unique Labels Loaded: {unique_labels}")
+            print(f"Task {task_id} - Label Counts: {counts}")
+            if len(counts) > 1 and counts[0] != counts[-1]:
+                print("SUCCESS: Label counts are imbalanced, indicating a long-tail distribution.")
+            else:
+                print("NOTE: Label counts appear balanced.")
+
+        except Exception as e:
+            print(f"Could not automatically inspect labels: {e}")
+        
+        print("="*80 + "\n")
         self.change_transform(dataset)
 
         self.opt = self.get_optimizer()
@@ -93,7 +119,9 @@ class MoEAdapters(FutureModel):
         num_batches = len(dataset.train_loader)
         total_iterations = self.args.n_epochs * num_batches
         # reducing warmup_length from 30 to 25
-        self.custom_scheduler = CosineSchedulerWithLinearWarmup(self.opt, self.args.lr, 25, total_iterations)
+        # For testing changing 25 -> 30
+        self.custom_scheduler = CosineSchedulerWithLinearWarmup(self.opt, self.args.lr, 30, total_iterations)
+        # self.custom_scheduler = CosineSchedulerWithLinearWarmup(self.opt, self.args.lr, min(25, int(total_iterations * 0.9)), total_iterations)
 
     def change_transform(self, dataset):
         dataset.train_loader.dataset.transform = self.net.clip_preprocess

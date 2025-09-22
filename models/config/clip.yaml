@@ -2,3 +2,29 @@ seq-eurosat-rgb:
   clip_backbone: ViT-L/14
   model: clip
   joint: 1 # static models don't need to be trained incrementally
+
+seq-cifar100:
+  lr_scheduler: null
+  lr: 0.03
+  clip_backbone: ViT-L/14
+  model: clip
+  dataset_config: 10tasks
+  long_tail: true
+  imb_factor: 0.02
+  # joint: 1 # static models don't need to be trained incrementally'dataset_config: 5tasks
+  seed: 0
+  permute_classes: 1
+  class_order: [69, 23, 57, 12, 89, 87, 34, 84, 3, 15, 47, 74, 75, 30, 52, 38, 37, 26, 72, 25, 46, 67, 61, 4, 64, 77, 16, 71, 28, 96, 78, 48, 88, 99, 65, 62, 82, 50, 19, 94, 10, 41, 60, 18, 39, 32, 79, 76, 91, 97, 27, 90, 45, 29, 49, 14, 1, 98, 20, 35, 43, 83, 80, 85, 58, 7, 59, 95, 0, 81, 21, 53, 42, 92, 8, 86, 9, 22, 2, 44, 17, 31, 33, 36, 5, 24, 63, 66, 70, 11, 6, 40, 13, 93, 73, 51, 54, 56, 55, 68]
+
+seq-tinyimg:
+  lr_scheduler: null
+  lr: 0.03
+  dataset_config: 10tasks
+  long_tail: true
+  imb_factor: 0.01
+  clip_backbone: ViT-L/14
+  model: clip
+  # joint: 1 # sdtatic models don't need to be trained incrementally'dataset_config: 5tasks
+  seed: 0
+  permute_classes: 1
+  class_order: [69, 23, 57, 12, 89, 87, 34, 84, 3, 15, 47, 74, 75, 30, 52, 38, 37, 26, 72, 25, 46, 67, 61, 4, 64, 77, 16, 71, 28, 96, 78, 48, 88, 99, 65, 62, 82, 50, 19, 94, 10, 41, 60, 18, 39, 32, 79, 76, 91, 97, 27, 90, 45, 29, 49, 14, 1, 98, 20, 35, 43, 83, 80, 85, 58, 7, 59, 95, 0, 81, 21, 53, 42, 92, 8, 86, 9, 22, 2, 44, 17, 31, 33, 36, 5, 24, 63, 66, 70, 11, 6, 40, 13, 93, 73, 51, 54, 56, 55, 68]

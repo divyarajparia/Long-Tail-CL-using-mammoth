@@ -323,6 +323,9 @@ def add_experiment_args(parser: ArgumentParser) -> None:
                              help='Disable caching the noisy label targets? NOTE: if the seed is not set, the noisy labels will be different at each run with this option disabled.')
     noise_group.add_argument('--cache_path_noisy_labels', type=str, default='noisy_labels',
                              help='Path where to save the noisy labels cache. The path is relative to the `base_path`.')
+    parser.add_argument('--imb_factor', type=float, default=None,
+                        help='Imbalance factor for long-tailed datasets.')
+
 
 
 def add_management_args(parser: ArgumentParser) -> None:
